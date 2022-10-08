@@ -1,0 +1,12 @@
+{
+  "key": "basic_example",
+  "definitions": {},
+  "values": {
+    "metal": ["bronze:7", "iron:25", "steel:20", "mithril"],
+    "wood": ["oak", "ash", "alder", "mahogany"]
+  },
+  "templates": [
+    "%metal% {sword|dagger|rapier|axe|sickle|}",
+    "%wood% {club|quarterstaff|shortbow|longbow}"
+  ]
+}
