@@ -21,7 +21,16 @@ class LibraryData {
   }
 
   public static Convert(json: string | object): LibraryData {
-    const c = typeof json === 'string' ? JSON.parse(json) : json;
+    let c;
+    try {
+      c = typeof json === 'string' ? JSON.parse(json) : json;
+    } catch (error) {
+      cLog(
+        `📙 Error converting object to LibraryData: item is not valid JSON`,
+        'error'
+      );
+      throw new Error(`${json}`);
+    }
     if (!c.key) {
       cLog(
         `🔑 Error converting object to LibraryData: item lacks key property`,
@@ -46,8 +55,7 @@ class LibraryData {
   }
 
   public Define(key: string, value: string) {
-    this.checkKey(key, 'definitions');
-    this.definitions[key] = value;
+    if (!this.definitions[key]) this.definitions[key] = value;
   }
 
   public ClearDefinition(key: string) {
@@ -73,7 +81,7 @@ class LibraryData {
     this.templates.splice(0, this.templates.length);
   }
 
-  public GetValue(key: string): string[] {
+  public GetValue(key: string): ValueItem[] {
     this.checkKey(key, 'values');
     return this.values[key];
   }
@@ -99,6 +107,30 @@ class LibraryData {
     this.values[key] = LibraryData.PrepValues(value, weight);
   }
 
+  public DeleteValue(key: string) {
+    this.checkKey(key, 'values');
+    delete this.values[key];
+  }
+
+  public ClearValue(key: string) {
+    this.checkKey(key, 'values');
+    this.values[key] = [{ value: '', weight: 1 }];
+  }
+
+  public ClearValueWeights(key: string) {
+    this.checkKey(key, 'values');
+    this.values[key].forEach((v: any) => {
+      v.weight = 1;
+    });
+  }
+
+  public AddValueItem(key: string, value: string, weight = 1) {
+    this.values[key].push({
+      value,
+      weight,
+    });
+  }
+
   public SetValueItem(key: string, index: number, value: string, weight = 1) {
     this.checkKey(key, 'values');
     this.checkIndex(index, `values.${key}`);
@@ -114,13 +146,6 @@ class LibraryData {
     this.values[key][index].weight = weight;
   }
 
-  public ClearValueWeights(key: string) {
-    this.checkKey(key, 'values');
-    this.values[key].forEach((v: any) => {
-      v.weight = 1;
-    });
-  }
-
   public DeleteValueItem(key: string, index: number) {
     this.checkKey(key, 'values');
     this.checkIndex(index, `values.${key}`);
@@ -132,16 +157,6 @@ class LibraryData {
     this.checkIndex(index, `values.${key}`);
     this.values[key][index].value = '';
     this.values[key][index].weight = 1;
-  }
-
-  public DeleteValue(key: string) {
-    this.checkKey(key, 'values');
-    delete this.values[key];
-  }
-
-  public ClearValue(key: string) {
-    this.checkKey(key, 'values');
-    this.values[key] = [{ value: '', weight: 1 }];
   }
 
   public static PrepValues(
@@ -160,7 +175,8 @@ class LibraryData {
 
       if (weights) {
         const wArr = Array.isArray(weights) ? weights : [weights];
-        for (const i of wArr) {
+
+        for (let i = 0; i < wArr.length; i++) {
           w[i] = wArr[i];
         }
       }
@@ -177,7 +193,7 @@ class LibraryData {
 
     return v.map((x: any, i: number) => ({
       value: x,
-      weight: w && w[i] && Number.isSafeInteger(w[i]) ? w[i] : 1,
+      weight: w[i],
     }));
   }
 
@@ -185,8 +201,7 @@ class LibraryData {
     let values: string[] = [];
     let weights: number[] = [];
     arr.forEach((str) => {
-      if (typeof str !== 'string') return;
-      // capture :number, ignore escape /:
+      // capture :number, ignore escape
       const match = str.match(/(?<!\\)(?:\:)\d+/);
       if (match && match[0]) {
         weights.push(Number(match[0].replace(':', '')));
@@ -205,7 +220,7 @@ class LibraryData {
       cLog(`📙`, `Error setting ${arrKey}: inappropriate index value`, 'error');
       throw new Error(`${index} cannot be used as index`);
     }
-    if (index > _.property(`this.${arrKey}`).length - 1 || index < 0) {
+    if (index > _.property(`this.${arrKey}`).length || index < 0) {
       cLog(`📙 Error setting ${arrKey}: index exceeds array bounds`, 'error');
       throw new Error(
         `Index ${index} exceeds array bounds of 0-${
@@ -216,7 +231,7 @@ class LibraryData {
   }
 
   private checkKey(key: string, objKey: string) {
-    if (!_.property(`this.${objKey}.${key}`)) {
+    if (!_.has(this, `${objKey}.${key}`)) {
       cLog(
         `📙`,
         `Error clearing ${objKey}: LibraryData contains no ${objKey} for ${key}`,
@@ -227,4 +242,4 @@ class LibraryData {
   }
 }
 
-export { LibraryData };
+export default LibraryData;

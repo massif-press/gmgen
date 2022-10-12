@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "suppressImplicitAnyIndexErrors": true,
+    "types": ["vitest/globals"]
   },
   "include": [
     "env.d.ts",

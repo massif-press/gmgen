@@ -1,4 +1,3 @@
-import { assert, expect, test } from 'vitest';
 import * as Util from '../lib/util';
 
 const iterations = 5000;
@@ -11,12 +10,12 @@ const testCollection = [
 
 const unweightedCollection = ['hello', 'world'];
 
-test('Util.Capitalize', () => {
+test('Capitalize', () => {
   expect(Util.Capitalize('hello')).toBe('Hello');
   expect(Util.Capitalize('hello').length).toBe(5);
 });
 
-test('Util.IntBetween', () => {
+test('IntBetween', () => {
   for (let i = iterations; i; i--) {
     expect(Util.IntBetween(0, 10)).greaterThanOrEqual(0);
     expect(Util.IntBetween(0, 10)).lessThanOrEqual(10);
@@ -24,7 +23,7 @@ test('Util.IntBetween', () => {
   }
 });
 
-test('Util.FloatBetween', () => {
+test('FloatBetween', () => {
   for (let i = iterations; i; i--) {
     expect(Util.FloatBetween(0, 1)).greaterThanOrEqual(0);
     expect(Util.FloatBetween(0, 1)).lessThanOrEqual(10);
@@ -32,7 +31,7 @@ test('Util.FloatBetween', () => {
   }
 });
 
-test('Util.WeightedSelection', () => {
+test('WeightedSelection', () => {
   expect(Util.WeightedSelection([])).toBe(null);
   expect(Util.WeightedSelection(undefined as any)).toBe(null);
 
@@ -51,7 +50,10 @@ test('Util.WeightedSelection', () => {
   ]);
 });
 
-// test('Util.cLog', () => {
-//   expect(Util.Capitalize('hello')).toBe('Hello');
-//   expect(Util.Capitalize('hello').length).toBe(5);
-// });
+test('cLog', () => {
+  const consoleSpy = vi.spyOn(console, 'log');
+  Util.cLog('a', 'b');
+  Util.cLog('a', 'b', 'error');
+  Util.cLog('a', 'b', 'warning');
+  expect(consoleSpy).toHaveBeenCalledTimes(3);
+});

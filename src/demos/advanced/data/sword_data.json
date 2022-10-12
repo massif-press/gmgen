@@ -1,0 +1,31 @@
+{
+  "key": "sword",
+  "definitions": {
+    "cutlass_damage": "111",
+    "gladius_damage": "111",
+    "saber_damage": "111",
+    "longsword_damage": "111",
+    "claymore_damage": "111",
+    "zweihander_damage": "111",
+    "katana_damage": "111",
+    "rapier_damage": "111",
+    "broadsword_damage": "111"
+  },
+  "values": {
+    "sword_type": [
+      "cutlass",
+      "gladius",
+      "saber",
+      "longsword",
+      "claymore",
+      "zweihander",
+      "katana",
+      "rapier",
+      "broadsword"
+    ]
+  },
+  "templates": [
+    "%material% %sword_type% @base_damage{%sword_type%_damage}",
+    "%sword_type% @base_damage{%sword_type%_damage}"
+  ]
+}

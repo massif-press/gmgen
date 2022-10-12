@@ -40,17 +40,17 @@ This is a standalone app wrapper for a set of upcoming COMP/CON features related
 
 Additionally, it'll be generalized into a standalone package for development of non- (or not necessarily, I guess) Lancer-related random generators.
 
-The goal is for this to be smarter and more flexible than a markov generator or adlib engine, without falling down the simulation rabbit hole.
+The goal is for this to be smarter and more flexible than a markov generator or ad-lib engine, without falling down the simulation rabbit hole.
 
 # How it works
 
-gmgen is essentially a text-replacement engine with some extra features. You define json arrays and objects with string data, and gmgen replaces bits of them with other bits. It's adlib templates that can be conditionally filled with other templates, or regular words, or keywords that are picked once and never change.
+gmgen is essentially a text-replacement engine with some extra features. You define json arrays and objects with string data, and gmgen replaces bits of them with other bits. It's ad-lib templates that can be conditionally filled with other templates, or regular words, or keywords that are picked once and never change.
 
 It seems complicated (and I've written a lot of words here) but was built to be pretty easy, straightforward, and organizable in practice. You can check the `/src/data` folder for a complicated Lancer example, but the generic module version of this project will have a much simpler example (or, probably, a small set of examples)
 
 # Demos
 
-TODO TODO TODO
+TODO
 
 # Usage
 
@@ -70,7 +70,11 @@ To use the generator, we need to provide this generator with a Library: an an ob
 const myLibrary = new Library();
 ```
 
-A [Library](#library) contains one or more [LibraryData](#librarydata). These data can be imported as [static JSON objects](#data-structure) or can be [programmatically generated](#dynamic-generation). Take a look at [Example JSON](#example-json) or !!!!!TODO!!!!!these demos!!!!!TODO!!!!! to get started with building Libraries.
+A [Library](#library) contains one or more [LibraryData](#librarydata). These data can be imported as [static JSON objects](#data-structure) or can be [programmatically generated](#dynamic-generation). Take a look at [Example JSON](#example-json) or
+TODO
+these demos
+TODO
+to get started with building Libraries.
 
 Multiple LibraryData can be added to a Library, to allow for deep and complex and/or dynamically produced generators. The library can be built or modified with the following functions:
 
@@ -113,7 +117,6 @@ After a library is loaded, we can modify the ValueMap, a collection of key-value
 ```ts
   AddValueMap(key: string, value: ValueInput) // add new values, or merge values at an already-existing key
   SetValueMap(key: string, value: ValueInput) // add new values, or overwrite values at an already-existing key
-  SetValueAtIndex(key: string, index: number, value: string | {value: string, weight: number}) // overwrite value at index (cannot be an array)
   GetValueMap(key: string): {key: string, weight: number}  // return an object of values (and their weights) at key. Returns null if the key is not defined
   HasValueMap(key: string): boolean // returns a true if any values exist at key, false if there aren't any, and an error if the key is not defined
 ```
@@ -152,9 +155,10 @@ The second optional parameter is a GeneratorOptions object:
 ```ts
 class GeneratorOptions {
   CleanMultipleSpaces: boolean; // remove all whitespace segments greater than length 1
-  CapitalizeFirst: boolean; // capitalize the first character after every newline character
   IgnoreMissingKeys: boolean; // ignore any missing keys instead of erroring out
+  CleanEscapes: boolean; // clean up any remaining unescaped backticks (`)
   MaxIterations: number; // number of times the parser will recursively iterate through the output before it quits
+  Logging: 'none' | 'errors only' | 'verbose'; // the level of logging gmgen will transmit to the console
 }
 ```
 
@@ -163,8 +167,8 @@ If no second parameter is supplied, the following default options will be used:
 ```ts
   {
     CleanMultipleSpaces: true,
-    CapitalizeFirst: true,
     IgnoreMissingKeys: true,
+    CleanEscapes: true
     MaxIterations: 100
   }
 ```
@@ -180,15 +184,19 @@ The generator repeats the following loop until it can't find anything else to do
 | 5    | find and replace keywords, resolve other selection sets                       |
 | 6    | increment iteration counter and return to step #1                             |
 
-It then returns a string
+Once this process finishes, the generator will finalize this still based on the GeneratorOptions parameters:
+
+## Rendering Options
+
+### CleanMultipleSpaces
+
+Reduces all non-newline whitespace to a single space.
+
+### IgnoreMissingKeys
+
+Finds and removes all unprocessed keys
 
 ## Debugging
-
-```ts
-  TestGeneration(template?: number|string|string[]|{Key: string}|{Templates: string}): string[]
-```
-
-Run a generation and collect issues (errors and warnings).
 
 ```ts
 FindMissingValues(): string[];
@@ -201,6 +209,12 @@ OverlappingDefinitions(): string[];
 ```
 
 Searches through the Library to find any multiple instances of definitions mapped to the same key
+
+```ts
+Step(template: string): string;
+```
+
+Shorthand for running the generator with a MaxIterations of `1` and no other options. The output can be fed back into the Step() function as its own template to continue processing. Useful in determining where a template or keyword is failing to render.
 
 # Syntax
 
@@ -215,12 +229,21 @@ Searches through the Library to find any multiple instances of definitions mappe
 | {inline:1\|sample:2}   | weighted sample (of weights 1 and 2, respectively)                                                   |
 | @pct10%prop%           | sample from prop 10% of the time, otherwise ignore (01-99)                                           |
 | @pct10{inline\|sample} | same as above, but for an inline selection set                                                       |
-| @key%prop%             | define sample from prop as `key`                                                                     |
-| @key{inline\|sample}   | define either "inline" or "sample" as `key`                                                          |
+| @key%prop%             | define sample from prop as `key`. **See note below**                                                 |
+| @key{inline\|sample}   | define either "inline" or "sample" as `key` **See note below**                                       |
 | ^%any%                 | capitalize the first letter of finalized selection (`hello world` => `Hello world`)                  |
 | ^{hello\|world}        | same as above for "hello" or "world" ("Hello", "World")                                              |
 | ^^%any%                | capitalize the first letter of all words in the finalized selection (`hello world` => `Hello World`) |
 | ^^^%any%               | capitalize all letters in the finalized selection (`hello world` => `HELLO WORLD`)                   |
+
+### Inline Definitions
+
+Defining a key with the @syntax will not render it inline. If you need to define something then use it immediately, define the key then call it again using prop syntax:
+
+| syntax                                                                  | result                    |
+| ----------------------------------------------------------------------- | ------------------------- |
+| `the sky is: @sky{stormy\|cloudy\|overcast\|partly cloudy\|clear}`      | the sky is:               |
+| `the sky is: @sky{stormy\|cloudy\|overcast\|partly cloudy\|clear} @sky` | the sky is: partly cloudy |
 
 ### Reserved Characters
 
@@ -253,7 +276,7 @@ Templates and selection sets can then reference that keyword, and will always re
 An inline definition, for example:
 
 ```json
-"this is a template, written by @name{beef|some jerk|your mom}"
+"this is a template, written by @name{beef|some jerk|your mom} %name%"
 ```
 
 or, within a data definition:
@@ -276,12 +299,12 @@ Definitions can then be used in templates like any other keyed item:
 
 | template                               | result                           |
 | -------------------------------------- | -------------------------------- |
-| `"this example was written by {name}"` | this example was written by beef |
+| `"this example was written by %name%"` | this example was written by beef |
 
-but can also use the `%key` syntax, which allows for its use _within_ selection sets:
+but can also use the `%key%` syntax, which allows for its use _within_ selection sets:
 template|transformation|result
 ---|---|---
-`{cities_%state} is in %state` | `{cities_illinois} is in illinois` | `chicago is in illinois`
+`{cities_%state%} is in %state` | `{cities_illinois} is in illinois` | `chicago is in illinois`
 
 Definitions don't have to be set within top-level data, necessarily. gmgen will continuously loop through output until all open tags are resolved, or it hits its execution limit (100 loops, by default). In the above example, the %name definition could have been set at the end of my generation process. That said, if a definition can't be evaluated until a later step it will get passed along as a template or selection set, and is therefore unlikely to remain consistent. It is best practice to either ensure definitions are either set as early as possible, or set in such a way that only one selection is possible.
 
@@ -291,17 +314,17 @@ Finally, the generator's `Define(key: string, value: string)` function is useful
 
 ### Keyword Syntax
 
-You **can** use the %key syntax to invoke **any** ValueMap key (eg. `%name` instead of {name}). You can even compose key names out of keyword syntax by closing the keyword definition with another `%`: `{%itemstyle%_%itemtype%}` could become `{ancient_weapon}`, and therefore pull from that ValueMap key.
+You **can** use the %key% syntax to invoke **any** ValueMap key (eg. `%name%` instead of {name}). You can even compose key names out of keyword syntax by closing the keyword definition with another `%`: `{%itemstyle%_%itemtype%}` could become `{ancient_weapon}`, and therefore pull from that ValueMap key.
 
-Furthermore you can use this syntax to nest keywords where you otherwise couldn't `{%like|%this|%or%-%this%}`.
+Furthermore you can use this syntax to nest keywords where you otherwise couldn't `{%like%|%this%|%or%-%this%}`.
 
 ## Selections
 
 **Selections are in-place random substitutions.**
 
-They can come from an inline list, a value map made from property selections (see [Data Structures](#data-structures)) or data in the library found at a property path. They can also contain keywords in order to modify selection sets (eg. `{cities_%country}` might resolve to `{cities_usa}` or `cities_china`).
+They can come from an inline list, a value map made from property selections (see [Data Structures](#data-structures)) or data in the library found at a property path. They can also contain keywords in order to modify selection sets (eg. `{cities_%country%}` might resolve to `{cities_usa}` or `cities_china`).
 
-Inline sets are very simple, and are written as `{bracketed|items|seperated|by|pipes}`. Every item has an equal chance of being selected, though this can be modified with _weights_. Weights are appended with a `:` and an integer, for example:
+Inline sets are very simple, and are written as `{bracketed|items|separated|by|pipes}`. Every item has an equal chance of being selected, though this can be modified with _weights_. Weights are appended with a `:` and an integer, for example:
 
 `"here's a template with a {good:10|cool:50|awful:1} weighted selection"`
 
@@ -363,7 +386,7 @@ A much different vibe, and one you didn't have to write a bar-type-determiner al
 
 ## Nesting
 
-Double inline selection sets, **cannot** be nested: `{choice a|choice {b1|b2|b3}|choice c}` will **not** work. `{choice a|choice %subchoice%|choice c}` where %subchoice points to a string of `"{b1|b2|b3}"` _will_ work.
+Double inline selection sets, **cannot** be nested: `{choice a|choice {b1|b2|b3}|choice c}` will **not** work. `{choice a|choice %subchoice%|choice c}` where `%subchoice%` points to a string of `"{b1|b2|b3}"` _will_ work.
 
 Aside from double inline sets, any sort of nesting should be viable (for the most part). One thing to watch out for is selection sets that can select for themselves. Consider:
 
@@ -396,8 +419,8 @@ Capitalization sequences should come first in a set of reserved characters:
 
 - ❌ `@pct50{^selection}`
 - ✅ `^@pct50{selection}`
-- ❌ `%^another_one`
-- ✅ `^%another_one`
+- ❌ `%^another_one%`
+- ✅ `^%another_one%`
 
 # Data Structure
 
@@ -664,12 +687,8 @@ Removes a value item at `key[index]`
 
 **If Definitions and Templates are ultimately converted to ValueMap items, what's to stop me from defining all my data as values?**
 
-> Nothing, and that's a completely valid way to lay our your library data. Definitions and Templates are simply organizational tools.
+> Nothing, and that's a completely valid way to lay out your library data. Definitions and Templates are simply organizational tools.
 
-**If Definitions and Templates are ultimately converted to ValueMap items, what's to stop me from defining all my data as values?**
-
-> Nothing, and that's a completely valid way to lay our your library data. Definitions and Templates are simply organizational tools.
-
-**There are no self-referential checks. Does that mean I can make runaway loops?**
+**There is no self-referential checking. Does that mean I can make runaway loops?**
 
 > Yes, however the generator will bail after a number of iteration (100 by default), so it's unlikely to cause a crash unless you dramatically increase the iteration limit.

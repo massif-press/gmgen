@@ -6,7 +6,7 @@
     "wood": ["oak", "ash", "alder", "mahogany"]
   },
   "templates": [
-    "%metal% {sword|dagger|rapier|axe|sickle|}",
+    "%metal% {sword|dagger|rapier|axe|scythe|machete}",
     "%wood% {club|quarterstaff|shortbow|longbow}"
   ]
 }

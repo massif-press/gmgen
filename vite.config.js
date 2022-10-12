@@ -18,7 +18,8 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.ts'],
-    coverage: {
+    globals: true,
+    rage: {
       include: ['src/**/*.ts', '!src/**/*.{d}.ts'],
       reportsDirectory: 'coverage',
       enabled: true,

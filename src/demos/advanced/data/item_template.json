@@ -1,0 +1,9 @@
+{
+  "key": "advanced weapons",
+  "values": {
+    "type": ["sword"]
+  },
+  "templates": [
+    "<div class='text-3xl'> @pct30%prefix% %type% @pct30%suffix% </div><br><div class='text-xl'> %base_damage% %prefix_damage% %suffix_damage% </div><p>%description%</p><p>%history%</p>"
+  ]
+}

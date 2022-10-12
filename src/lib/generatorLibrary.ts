@@ -1,15 +1,25 @@
-import { LibraryData } from './libraryData';
+import LibraryData from './libraryData';
 import { cLog } from './util';
 
 class GeneratorLibrary {
   private _content: LibraryData[];
 
-  constructor(...libraryData: any[]) {
+  constructor(libraryData: any) {
     this._content = [];
+
     if (libraryData) {
-      libraryData.map((x) => {
-        this.AddData(x);
-      });
+      if (Array.isArray(libraryData)) {
+        libraryData.map((x) => {
+          this.AddData(x);
+        });
+      } else if (libraryData.key) {
+        this.AddData(libraryData);
+      } else if (libraryData[Object.keys(libraryData)[0]].key) {
+        for (const key in libraryData) {
+          console.log(key);
+          this.AddData(libraryData[key]);
+        }
+      }
     }
   }
 
@@ -53,11 +63,18 @@ class GeneratorLibrary {
     return this._content.findIndex((x) => x.key === k);
   }
 
-  private mergeData(data: LibraryData) {
-    this._content[this.contentIndex(data.key)] = {
-      ...this._content[data.key],
-      ...LibraryData.Convert(data),
-    };
+  private mergeData(newData: LibraryData) {
+    const oldData = this._content[this.contentIndex(newData.key)];
+    const merged = new LibraryData(
+      newData.key,
+      { ...newData.definitions, ...oldData.definitions },
+      oldData.values,
+      [...oldData.templates, ...newData.templates]
+    );
+    for (const k in newData.values) {
+      merged.AddValue(k, newData.values[k]);
+    }
+    this._content[this.contentIndex(newData.key)] = merged;
   }
 
   private getKeyStr(key: string | LibraryData) {
@@ -75,4 +92,4 @@ class GeneratorLibrary {
   }
 }
 
-export { GeneratorLibrary };
+export default GeneratorLibrary;
