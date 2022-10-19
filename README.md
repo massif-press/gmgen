@@ -220,21 +220,51 @@ Shorthand for running the generator with a MaxIterations of `1` and no other opt
 
 ## tl;dr
 
-| syntax                 | result                                                                                               |
-| ---------------------- | ---------------------------------------------------------------------------------------------------- |
-| %prop%                 | sample from the ValueMap at key "prop"                                                               |
-| %prop_a\|prop_b%       | sample from the ValueMap at key "prop_a" OR "prop_b"                                                 |
-| %prop_a:1\|prop_b:3%   | same as above but with selection weights                                                             |
-| {inline\|sample}       | sample from ["inline", "sample"]                                                                     |
-| {inline:1\|sample:2}   | weighted sample (of weights 1 and 2, respectively)                                                   |
-| @pct10%prop%           | sample from prop 10% of the time, otherwise ignore (01-99)                                           |
-| @pct10{inline\|sample} | same as above, but for an inline selection set                                                       |
-| @key%prop%             | define sample from prop as `key`. **See note below**                                                 |
-| @key{inline\|sample}   | define either "inline" or "sample" as `key` **See note below**                                       |
-| ^%any%                 | capitalize the first letter of finalized selection (`hello world` => `Hello world`)                  |
-| ^{hello\|world}        | same as above for "hello" or "world" ("Hello", "World")                                              |
-| ^^%any%                | capitalize the first letter of all words in the finalized selection (`hello world` => `Hello World`) |
-| ^^^%any%               | capitalize all letters in the finalized selection (`hello world` => `HELLO WORLD`)                   |
+### Basic Selection
+
+| syntax           | result                                               |
+| ---------------- | ---------------------------------------------------- |
+| %prop%           | sample from the ValueMap at key "prop"               |
+| %prop_a\|prop_b% | sample from the ValueMap at key "prop_a" OR "prop_b" |
+| {inline\|sample} | sample from ["inline", "sample"]                     |
+
+### Weighted Selection
+
+| syntax               | result                                             |
+| -------------------- | -------------------------------------------------- |
+| %prop_a:1\|prop_b:3% | same as above but with selection weights           |
+| {inline:1\|sample:2} | weighted sample (of weights 1 and 2, respectively) |
+
+### Definition
+
+| syntax               | result                                                               |
+| -------------------- | -------------------------------------------------------------------- |
+| @key%prop%           | define sample from prop as `key`. [¹](#inline-definitions)           |
+| @key{inline\|sample} | define either "inline" or "sample" as `key` [¹](#inline-definitions) |
+
+### Conditional Selection
+
+| syntax                       | result                                                                                               |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| @pct10%prop%                 | sample from prop 10% of the time, otherwise ignore (01-99)                                           |
+| @pct10{inline\|sample}       | same as above, but for an inline selection set                                                       |
+| @if:key%prop%                | sample from prop if "key" is defined                                                                 |
+| @if:key{inline\|sample}      | sample either "inline" or "sample" if "key" is defined                                               |
+| @if:!key%prop%               | sample from prop if "key" is **not** defined                                                         |
+| @if:!key{inline\|sample}     | sample either "inline" or "sample" if "key" is **not** defined                                       |
+| @if:key=val%prop%            | sample from prop if "key" if _key_ is defined as _val_ [²](#evaluated-conditionals)                  |
+| @if:key=val{inline\|sample}  | sample either "inline" or "sample" if "key" if _key_ is defined as _val_[²](#evaluated-conditionals) |
+| @if:key!=val%prop%           | sample from prop if "key" is **not** defined as _val_ [3](#evaluated-conditionals)                   |
+| @if:key!=val{inline\|sample} | sample either "inline" or "sample" if "key" is **not** defined as _val_ [3](#evaluated-conditionals) |
+
+### Capitalization
+
+| syntax          | result                                                                                               |
+| --------------- | ---------------------------------------------------------------------------------------------------- |
+| ^%any%          | capitalize the first letter of finalized selection (`hello world` => `Hello world`)                  |
+| ^{hello\|world} | same as above for "hello" or "world" ("Hello", "World")                                              |
+| ^^%any%         | capitalize the first letter of all words in the finalized selection (`hello world` => `Hello World`) |
+| ^^^%any%        | capitalize all letters in the finalized selection (`hello world` => `HELLO WORLD`)                   |
 
 ### Inline Definitions
 
@@ -245,7 +275,15 @@ Defining a key with the @syntax will not render it inline. If you need to define
 | `the sky is: @sky{stormy\|cloudy\|overcast\|partly cloudy\|clear}`      | the sky is:               |
 | `the sky is: @sky{stormy\|cloudy\|overcast\|partly cloudy\|clear} @sky` | the sky is: partly cloudy |
 
-### Reserved Characters
+### Evaluated Conditionals
+
+These will only be evaluated correctly if the key is resolved to a single value (it must be defined as "foo" and not "foo|bar" or ["foo", "bar"]). gmgen breaks these resolutions into a separate evaluation process that happens after the core resolution loop, so these will always be evaluated last and so may be set further down the selection tree.
+
+However, because these keys must resolve to a single value, best practice is to ensure that all keys used for conditionals are only ever assigned using `@key` syntax or via the `Define()` function.
+
+Additionally, these values are case sensitive. `@if:foo=bar` will fail if `foo` equals `Bar`
+
+## Reserved Characters
 
 - global: `{}` `@` `^` `%`
 - within a sample set: `|`
@@ -413,7 +451,7 @@ Doubling the caret (`^^`) will capitalize every word in the selection set. Tripl
 
 (every album data string in the above example being saved in lower case)
 
-All capitalization sequences can be escaped by prepending a single backtick: `\^` `\^^` and `\^^^`
+All capitalization sequences can be escaped by prepending a backtick on each carat: `` ^`  ``^`^` and ``^`^`^`
 
 Capitalization sequences should come first in a set of reserved characters:
 

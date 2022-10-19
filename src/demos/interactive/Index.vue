@@ -4,6 +4,7 @@
       title="INTERACTIVE DEMO"
       subtitle="RPG treasure generator with modifiable templates and selections"
     >
+      this one should have weighted selections
       <template #generator>
         <div class="grid">
           <div class="w-96 justify-self-center">

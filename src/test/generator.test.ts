@@ -258,33 +258,33 @@ describe('FindMissingValues', () => {
   });
 });
 
-describe('OverlappingDefinition', () => {
-  it('should pass alert on overlapping definition', () => {
-    let g = new Generator(
-      new GeneratorLibrary(
-        new LibraryData('a', { test: 'hello' }),
-        new LibraryData('b', { test: 'world' })
-      )
-    );
-    const od = g.OverlappingDefinitions();
-    expect(od).toHaveLength(1);
-    expect(od[0]).toBe('ALERT: overlapping definition at key "test"');
-  });
+// describe('OverlappingDefinition', () => {
+//   it('should pass alert on overlapping definition', () => {
+//     let g = new Generator(
+//       new GeneratorLibrary(
+//         new LibraryData('a', { test: 'hello' }),
+//         new LibraryData('b', { test: 'world' })
+//       )
+//     );
+//     const od = g.OverlappingDefinitions();
+//     expect(od).toHaveLength(1);
+//     expect(od[0]).toBe('ALERT: overlapping definition at key "test"');
+//   });
 
-  it('should pass warning on overlapping definition of different cases', () => {
-    let g = new Generator(
-      new GeneratorLibrary(
-        new LibraryData('a', { test: 'hello' }),
-        new LibraryData('b', { Test: 'world' })
-      )
-    );
-    const od = g.OverlappingDefinitions();
-    expect(od).toHaveLength(1);
-    expect(od[0]).toBe(
-      'Warning: key "Test" already exists, but in a different case. This will not cause an overlap but may be confusing.'
-    );
-  });
-});
+//   it('should pass warning on overlapping definition of different cases', () => {
+//     let g = new Generator(
+//       new GeneratorLibrary(
+//         new LibraryData('a', { test: 'hello' }),
+//         new LibraryData('b', { Test: 'world' })
+//       )
+//     );
+//     const od = g.OverlappingDefinitions();
+//     expect(od).toHaveLength(1);
+//     expect(od[0]).toBe(
+//       'Warning: key "Test" already exists, but in a different case. This will not cause an overlap but may be confusing.'
+//     );
+//   });
+// });
 
 describe('Step', () => {
   let g = new Generator(new GeneratorLibrary());

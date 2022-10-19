@@ -1,3 +1,5 @@
+// TODO: conditionals
+
 import _ from 'lodash';
 import GeneratorLibrary from './generatorLibrary';
 import LibraryData from './libraryData';
@@ -31,7 +33,7 @@ class Generator {
 
   private _loggingLevel = 'errors only';
 
-  constructor(library?: GeneratorLibrary | null, options?: GeneratorOptions) {
+  constructor(library?: GeneratorLibrary | null, options?: any) {
     this.ValueMap = new Map<string, ValueItem[]>();
     if (library) this.LoadLibrary(library);
     if (options) this.SetOptions(options);
@@ -63,9 +65,11 @@ class Generator {
     this.endTimer('Library loaded');
   }
 
-  public SetOptions(options: GeneratorOptions) {
-    this._options = options;
-    this._loggingLevel = options.Logging;
+  public SetOptions(options: any) {
+    for (const key in this._options) {
+      if (options[key]) this._options[key] = options[key];
+      if (key.toLowerCase() === 'logging') this._loggingLevel = options.Logging;
+    }
   }
 
   public SetOption(key: keyof GeneratorOptions, value: any) {
@@ -79,13 +83,25 @@ class Generator {
 
     this._output = this.getBaseTemplate(template);
     let loops = this._options.MaxIterations;
-    let selectionsRemaining = true;
-    while (loops && selectionsRemaining) {
-      selectionsRemaining = this.process();
+    let completed = 0;
+    let final = false; // for negative conditionals
+    while (loops) {
+      let cachedOutput = this._output;
+      loops = this.innerProcess(loops);
+      this.outerProcess(final);
+      if (this._output === cachedOutput) {
+        loops = 1;
+        final = true;
+      }
+
       loops--;
+      completed++;
     }
 
-    if (!loops && this._loggingLevel !== 'none') {
+    if (
+      completed === this._options.MaxIterations &&
+      this._loggingLevel !== 'none'
+    ) {
       cLog(
         '🔁',
         'Generator has exceeded its iteration limit. This likely means an referenced key cannot be resolved. The FindMissingValues() function can help debug these issues.',
@@ -93,7 +109,9 @@ class Generator {
       );
     }
 
-    this.endTimer(`Item generated (${100 - loops}  loops)`);
+    this.endTimer(
+      `Item generated (${this._options.MaxIterations - loops}  loops)`
+    );
 
     this.cleanup();
 
@@ -101,14 +119,48 @@ class Generator {
   }
 
   private cleanup() {
+    // this.clearCapitalSyntax();
+    this.processCapitals();
     this.clearCapitalSyntax();
+    this.clearBracketSyntax();
     if (this._options.CleanMultipleSpaces) this.clearMultipleSpaces();
     if (this._options.IgnoreMissingKeys) this.clearMissingKeys();
     if (this._options.CleanEscapes) this.cleanEscapes();
   }
 
+  private processCapitals() {
+    // group 1 is carats, group 2 is content without syntax
+    const capitalizeRegex = /(?<!\`)(\^+){(.*?)}/g;
+    const matches = [...this._output.matchAll(capitalizeRegex)];
+
+    matches.forEach((match) => {
+      let val;
+      switch (match[1].length) {
+        case 3:
+          val = match[2].toUpperCase();
+          break;
+        case 2:
+          val = match[2]
+            .split(' ')
+            .map((w) => w[0].toUpperCase() + w.substring(1))
+            .join(' ');
+          break;
+        case 1:
+          val = match[2][0].toUpperCase() + match[2].substring(1);
+          break;
+        default:
+          return match[2];
+      }
+      this._output = this._output.replace(match[0], val);
+    });
+  }
+
   private clearCapitalSyntax() {
     this._output = this._output.replace(/(?<!`)(\^+)/g, '');
+  }
+
+  private clearBracketSyntax() {
+    this._output = this._output.replace(/(?<!`)[{}]/g, '');
   }
 
   private clearMultipleSpaces() {
@@ -116,8 +168,8 @@ class Generator {
   }
 
   private clearMissingKeys() {
-    const inlineRegex = /(?<!\`)%(.*?)%/g;
-    const matches = [...this._output.matchAll(inlineRegex)];
+    const missingKeyRegex = /(?<!\`)%(.*?)%/g;
+    const matches = [...this._output.matchAll(missingKeyRegex)];
     matches.forEach((match) => {
       if (!this.HasValueMap(match[1])) {
         this._output = this._output.replace(match[0], '');
@@ -129,42 +181,57 @@ class Generator {
     this._output = this._output.replace(/`/g, '');
   }
 
-  private process(): boolean {
-    const contFlags = new Array(5).fill(false);
-    // remove @pct misses
-    contFlags[0] = this.resolvePcts();
-    // remove @pct misses
-    contFlags[1] = this.resolveInlineSelectionSets();
-    // resolve inline selections
-    contFlags[3] = this.resolveInline();
-    // do other selections
-    contFlags[4] = this.resolveSets();
-    // assign keywords
-    contFlags[2] = this.assignKeys();
+  private innerProcess(loops: number): number {
+    const contFlags = new Array(5).fill(true);
+    let innerLoops = loops;
 
-    return contFlags.includes(true);
+    while (loops && contFlags.includes(true)) {
+      // remove @pct misses
+      contFlags[0] = this.resolvePcts();
+      // remove inline selection sets misses
+      contFlags[1] = this.resolveInlineSelectionSets();
+      // resolve inline selections
+      contFlags[2] = this.resolveInline();
+      // do other selections
+      contFlags[3] = this.resolveSets();
+      // assign keywords
+      contFlags[4] = this.assignKeys();
+
+      innerLoops--;
+    }
+
+    return innerLoops;
   }
 
-  private processCapitals(idx: number, str: string): string {
-    const isCarat = (idx: number): boolean => {
-      return this._output[idx] === '^';
-    };
-    const cLevel = [idx - 3, idx - 2, idx - 1]
-      .map((n) => isCarat(n))
-      .filter((x) => (x = !!x)).length;
-    switch (cLevel) {
-      case 3:
-        return str.toUpperCase();
-      case 2:
-        return str
-          .split(' ')
-          .map((w) => w[0].toUpperCase() + w.substring(1))
-          .join(' ');
-      case 1:
-        return str[0].toUpperCase() + str.substring(1);
-      default:
-        return str;
-    }
+  private outerProcess(final: boolean) {
+    // find all @if and @!if
+    // group 0 is full match, group 1 is if/!if, group 2 is key OR key=val, group 3 is content including syntactical elements
+    // backtick escapes
+    const pctRegex = /(?<!\`)@(!if|if):(\S*)([{%].*?[}%])/g;
+    const matches = [...this._output.matchAll(pctRegex)];
+    matches.forEach((match) => {
+      const kArr = match[2].split('=');
+      const key = kArr[0];
+      const val = kArr.length === 2 ? kArr[1] : '';
+      const mapValue = this.GetValueMap(key);
+      if (mapValue) {
+        if (!val) {
+          // if no evaluation, replace on key found
+          if (match[1].includes('!'))
+            this._output = this._output.replace(match[0], '');
+          else this._output = this._output.replace(match[0], match[3]);
+        } else if (mapValue.values.length === 1) {
+          if (val === mapValue.values[0]) {
+            if (match[1].includes('!'))
+              this._output = this._output.replace(match[0], '');
+            else this._output = this._output.replace(match[0], match[3]);
+          }
+        }
+      } else if (final) {
+        if (match[1].includes('!'))
+          this._output = this._output.replace(match[0], '');
+      }
+    });
   }
 
   private resolveInlineSelectionSets() {
@@ -194,6 +261,8 @@ class Generator {
     const keywordRegex = /(?<!\`)@(.*?)([{%].*?[}%])/g;
     const matches = [...this._output.matchAll(keywordRegex)];
     matches.forEach((match) => {
+      if (match[1].match(/pct[0-9]+/)) return;
+      if (match[1].includes('if:')) return;
       found = true;
       if (match[2].includes('{')) {
         // inline selection
@@ -221,11 +290,11 @@ class Generator {
     const inlineRegex = /(?<!\`){(.*?)}/g;
     const matches = [...this._output.matchAll(inlineRegex)];
     matches.forEach((match) => {
-      if (!match.index) return;
+      if (!match[1].includes('|')) return false;
       found = true;
       this._output = this._output.replace(
         match[0],
-        this.processCapitals(match.index, this._getInlineValue(match[1]))
+        `{${this._getInlineValue(match[1])}}`
       );
     });
 
@@ -241,10 +310,11 @@ class Generator {
     const matches = [...this._output.matchAll(inlineRegex)];
     matches.forEach((match) => {
       found = true;
+
       if (this.HasValueMap(match[1])) {
         this._output = this._output.replace(
           match[0],
-          this._getMapValue(match[1])
+          `{${this._getMapValue(match[1])}}`
         );
       }
     });
@@ -318,7 +388,11 @@ class Generator {
     this.checkLibrary();
     if (!this.HasValueMap(key)) this.ValueMap.set(key, [{ value, weight: 1 }]);
     else if (this._loggingLevel !== 'none')
-      cLog(`🔒','A definition already exists for ${key} (${value})`, 'warning');
+      cLog(
+        '🔒',
+        `A definition already exists for ${key} (${value})`,
+        'warning'
+      );
   }
 
   public HasValueMap(key: string): boolean {
@@ -376,8 +450,6 @@ class Generator {
     });
     const res = this.Generate(template);
 
-    if (!this.process()) return out;
-
     const inlineRegex = /(?<!\`)%(.*?)%/g;
     const matches = [...res.matchAll(inlineRegex)];
     matches.forEach((match) => {
@@ -400,7 +472,6 @@ class Generator {
     const seen = {};
 
     defs.forEach((def) => {
-      console.log(def);
       if (seen[def]) out.push(`ALERT: overlapping definition at key "${def}"`);
       else seen[def] = true;
 

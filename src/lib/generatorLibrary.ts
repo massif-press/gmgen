@@ -4,7 +4,7 @@ import { cLog } from './util';
 class GeneratorLibrary {
   private _content: LibraryData[];
 
-  constructor(libraryData: any) {
+  constructor(libraryData?: any) {
     this._content = [];
 
     if (libraryData) {
@@ -16,7 +16,6 @@ class GeneratorLibrary {
         this.AddData(libraryData);
       } else if (libraryData[Object.keys(libraryData)[0]].key) {
         for (const key in libraryData) {
-          console.log(key);
           this.AddData(libraryData[key]);
         }
       }

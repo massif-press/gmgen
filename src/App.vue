@@ -36,9 +36,7 @@
           </div>
           <div><btn short @click="$router.push('/dynamic')">DYNAMIC</btn></div>
           <div>
-            <btn short @click="$router.push('/weighted')"
-              >WEIGHTED SELECTIONS</btn
-            >
+            <btn short @click="$router.push('/weighted')">COMPOSITIONAL</btn>
           </div>
           <div>
             <btn short @click="$router.push('/interactive')">INTERACTIVE</btn>
@@ -59,7 +57,7 @@
 <script setup lang="ts">
 import Btn from './demos/_components/btn.vue';
 
-const openTab = (url) => {
+const openTab = (url: string) => {
   window.open(url, '_blank');
 };
 </script>
