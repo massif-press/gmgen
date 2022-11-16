@@ -1,0 +1,58 @@
+{
+  "key": "description",
+  "values": {
+    "location": "forests|wood|marshes|canyons|plateaus|swamps|caverns|caves|plains|glades|inlets|badlands|deserts",
+    "placename": [
+      "Xoscoeca",
+      "Gestington",
+      "Hafrain",
+      "Triyce",
+      "Ocrax",
+      "Todroesal",
+      "Lepril",
+      "Braeg Stus",
+      "Yaswington",
+      "Otrain",
+      "Cheit Pror"
+    ],
+    "tribe": [
+      "{silver|gold|iron|rust|grime|sharp|broken}{claw|tooth|scale|fang} {tribe:6|clan:4|chiefdom:2}",
+      "{olivax|irgorath|tyriveax|limileax} {clutch|clan|brood|kin}",
+      "{rust|sand|grime|stone|iron|fire|dragon}{gate|hill|burrow|warren|lair|den|hollow|scrape} {tribe:6|clan:4|chiefdom:2}"
+    ],
+    "size": [
+      { "value": "{quite|very} small, even for a kobold", "weight": 1 },
+      { "value": "somewhat short for a kobold", "weight": 3 },
+      { "value": "of average size for its species", "weight": 7 },
+      { "value": "{quite|very|extremely} tall, for a kobold", "weight": 1 }
+    ],
+    "scales": [
+      "bright {green|grey|blue|red|orange|yellow|tan|white}",
+      "dull {green|grey|blue|red|orange|yellow|tan|white}",
+      "rust-colored",
+      "grimy and discolored",
+      "pristine blue",
+      "mud-brown"
+    ],
+    "features": [
+      "a {prominent|short} snout",
+      "a {very long|short|stubby|thin|unusually thick|cropped} tail",
+      "a {lazy|cloudy|unusually bright} {right|left} eye",
+      "a {large|small|vicious-looking} scar {across their face|crossing their left eye|across the chest|down their back}",
+      "a {splash|stripe|swathe} of {off-color|pure white|pure black|blood red} scales {across their face|down their side|over their left claw|over their right claw|over their claws|across their feet}",
+      "{long|short|dull|sharp|ragged} talons",
+      "{spines|spikes} {down their back|on their brow|off their jaw}",
+      "{large|short|stubby|sharp|curved|recurved|spiraled} horns"
+    ],
+    "garb": [
+      "they wear nothing, save for a {crude|short|ragged} loincloth, made from {hemp|jute|animal skin|vegetable fiber|raw leather}",
+      "they wear handmade {fiber|cloth|leather} garments, cut for a kobold",
+      "they have dyed their scales in a form of tattoo, and are covered in symbols and pictograms meaningful to their tribe",
+      "they are painted with an ash paste, crude warpaint meant to imbue a more fearsome appearance",
+      "they wear stolen human clothing of {some|little} value, comically oversized but they're clearly very proud of it"
+    ]
+  },
+  "templates": [
+    "%name% is a kobold of ^^%tribe%, one of {many|a few|very few} {small} {clutches} {of kobolds|of its kin|of these creatures} in the ^%location% of ^%placename%. %name% is %size%, and {rail-thin|thin:2|of average build:7|rotund}, with %scales% scales and %features%. %garb%"
+  ]
+}

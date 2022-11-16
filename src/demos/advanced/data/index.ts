@@ -1,4 +1,5 @@
-import itemTemplate from './item_template.json';
-import sword_data from './sword_data.json';
+import templates from './templates.json';
+import description from './description.json';
+import inventory from './inventory.json';
 
-export { itemTemplate, sword_data };
+export { templates, description, inventory };

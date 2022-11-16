@@ -31,7 +31,7 @@
       </template>
       <template #code>
         <div>
-          <b>basic_demo.ts</b>
+          <b>advanced_demo.ts</b>
           <div
             class="justify-self-center py-2 px-4 m-3 rounded-md bg-slate-800 font-mono"
           >

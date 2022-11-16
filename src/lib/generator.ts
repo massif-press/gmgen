@@ -1,4 +1,6 @@
 // TODO: conditionals
+// TODO: capitalization
+// TODO: test compositonals
 
 import _ from 'lodash';
 import GeneratorLibrary from './generatorLibrary';
@@ -84,19 +86,20 @@ class Generator {
     this._output = this.getBaseTemplate(template);
     let loops = this._options.MaxIterations;
     let completed = 0;
-    let final = false; // for negative conditionals
-    while (loops) {
+    while (loops > 0) {
       let cachedOutput = this._output;
-      loops = this.innerProcess(loops);
-      this.outerProcess(final);
-      if (this._output === cachedOutput) {
-        loops = 1;
-        final = true;
+
+      this.innerProcess();
+      this.outerProcess();
+
+      if (loops > 2 && this._output === cachedOutput) {
+        loops = 2;
       }
 
       loops--;
       completed++;
     }
+    this.outerProcess(true);
 
     if (
       completed === this._options.MaxIterations &&
@@ -109,9 +112,7 @@ class Generator {
       );
     }
 
-    this.endTimer(
-      `Item generated (${this._options.MaxIterations - loops}  loops)`
-    );
+    this.endTimer(`Item generated (${completed}  loops)`);
 
     this.cleanup();
 
@@ -181,29 +182,35 @@ class Generator {
     this._output = this._output.replace(/`/g, '');
   }
 
-  private innerProcess(loops: number): number {
+  private innerProcess(): boolean {
     const contFlags = new Array(5).fill(true);
-    let innerLoops = loops;
 
-    while (loops && contFlags.includes(true)) {
+    let innerLoops = 5;
+
+    while (innerLoops > 0) {
       // remove @pct misses
       contFlags[0] = this.resolvePcts();
-      // remove inline selection sets misses
-      contFlags[1] = this.resolveInlineSelectionSets();
-      // resolve inline selections
-      contFlags[2] = this.resolveInline();
-      // do other selections
-      contFlags[3] = this.resolveSets();
       // assign keywords
-      contFlags[4] = this.assignKeys();
+      contFlags[1] = this.assignKeys();
+      // remove inline selection sets misses
+      contFlags[2] = this.resolveInlineSelectionSets();
+      // resolve inline selections
+      contFlags[3] = this.resolveInline();
+      // do other selections
+      contFlags[4] = this.resolveSets();
 
       innerLoops--;
     }
 
-    return innerLoops;
+    return contFlags.includes(true);
   }
 
-  private outerProcess(final: boolean) {
+  private outerProcess(final?: boolean) {
+    this.conditionalSelection(final);
+    this.compositionalSelection();
+  }
+
+  private conditionalSelection(final?: boolean) {
     // find all @if and @!if
     // group 0 is full match, group 1 is if/!if, group 2 is key OR key=val, group 3 is content including syntactical elements
     // backtick escapes
@@ -230,6 +237,21 @@ class Generator {
       } else if (final) {
         if (match[1].includes('!'))
           this._output = this._output.replace(match[0], '');
+      }
+    });
+  }
+
+  private compositionalSelection() {
+    // find all @compose
+    // group 0 is full match, group 1 is inner value not including syntactical elements
+    // backtick escapes
+    const pctRegex = /(?<!\`)@compose\((.*?)\)/g;
+    const matches = [...this._output.matchAll(pctRegex)];
+    matches.forEach((match) => {
+      let res = match[1];
+      res = res.replaceAll(/[%{}|]/g, '');
+      if (this.HasValueMap(res)) {
+        this._output = this._output.replace(match[0], this._getMapValue(res));
       }
     });
   }
@@ -263,6 +285,7 @@ class Generator {
     matches.forEach((match) => {
       if (match[1].match(/pct[0-9]+/)) return;
       if (match[1].includes('if:')) return;
+      if (match[1].includes('compose')) return;
       found = true;
       if (match[2].includes('{')) {
         // inline selection
@@ -294,7 +317,7 @@ class Generator {
       found = true;
       this._output = this._output.replace(
         match[0],
-        `{${this._getInlineValue(match[1])}}`
+        this._getInlineValue(match[1])
       );
     });
 
@@ -314,7 +337,7 @@ class Generator {
       if (this.HasValueMap(match[1])) {
         this._output = this._output.replace(
           match[0],
-          `{${this._getMapValue(match[1])}}`
+          this._getMapValue(match[1])
         );
       }
     });

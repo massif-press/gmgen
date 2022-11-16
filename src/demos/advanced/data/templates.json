@@ -1,0 +1,58 @@
+{
+  "key": "kobolds",
+  "values": {
+    "names": [
+      "Arx ",
+      "Eks",
+      "Ett",
+      "Gack",
+      "Garu",
+      "Harv",
+      "Hox",
+      "Kashk",
+      "Irtos",
+      "Molo",
+      "Soss",
+      "Sagin",
+      "Sik",
+      "Sniv",
+      "Taklak",
+      "Tes",
+      "Urak",
+      "Varn",
+      "Gess",
+      "Vum",
+      "Degs",
+      "Keb",
+      "Olv",
+      "Sork",
+      "Vass",
+      "Hek",
+      "Naks",
+      "Mela",
+      "Ovli",
+      "Dovle",
+      "Salk",
+      "Huks",
+      "Mosk",
+      "Sik",
+      "Duss",
+      "Ohle",
+      "Detli",
+      "Sep",
+      "Zega",
+      "Sule",
+      "Halge"
+    ],
+    "suffix": [
+      "{Clutch|Brood}runt",
+      "{Mangle|Broken|Torn}{tail|tooth|ear}",
+      "{Goblin|Man|Rat|Imp}bane",
+      "{Short|Long|Gnarl}{snout|claw|tail|ear}"
+    ],
+    "classes": ["warrior", "thief", "ranger", "shaman"]
+  },
+  "templates": [
+    "<div class='text-3xl'> @name%names% %name% @pct15%suffix% </div><div class='text-xl'> Kobold @class%classes% ^%class% </div><br><div class='text-xl'> Description </div><p class='p-1'>%description%</p><div class='text-xl'> Inventory </div><p class='p-1'>%inventory%</p>"
+  ]
+}

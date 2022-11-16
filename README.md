@@ -218,9 +218,7 @@ Shorthand for running the generator with a MaxIterations of `1` and no other opt
 
 # Syntax
 
-## tl;dr
-
-### Basic Selection
+## Basic Selection
 
 | syntax           | result                                               |
 | ---------------- | ---------------------------------------------------- |
@@ -228,21 +226,30 @@ Shorthand for running the generator with a MaxIterations of `1` and no other opt
 | %prop_a\|prop_b% | sample from the ValueMap at key "prop_a" OR "prop_b" |
 | {inline\|sample} | sample from ["inline", "sample"]                     |
 
-### Weighted Selection
+## Weighted Selection
 
 | syntax               | result                                             |
 | -------------------- | -------------------------------------------------- |
 | %prop_a:1\|prop_b:3% | same as above but with selection weights           |
 | {inline:1\|sample:2} | weighted sample (of weights 1 and 2, respectively) |
 
-### Definition
+## Definition
 
 | syntax               | result                                                               |
 | -------------------- | -------------------------------------------------------------------- |
 | @key%prop%           | define sample from prop as `key`. [¹](#inline-definitions)           |
 | @key{inline\|sample} | define either "inline" or "sample" as `key` [¹](#inline-definitions) |
 
-### Conditional Selection
+### Inline Definitions
+
+Defining a key with the @syntax will not render it inline. If you need to define something then use it immediately, define the key then call it again using prop syntax:
+
+| syntax                                                                  | result                    |
+| ----------------------------------------------------------------------- | ------------------------- |
+| `the sky is: @sky{stormy\|cloudy\|overcast\|partly cloudy\|clear}`      | the sky is:               |
+| `the sky is: @sky{stormy\|cloudy\|overcast\|partly cloudy\|clear} @sky` | the sky is: partly cloudy |
+
+## Conditional Selection
 
 | syntax                       | result                                                                                               |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------- |
@@ -254,26 +261,8 @@ Shorthand for running the generator with a MaxIterations of `1` and no other opt
 | @if:!key{inline\|sample}     | sample either "inline" or "sample" if "key" is **not** defined                                       |
 | @if:key=val%prop%            | sample from prop if "key" if _key_ is defined as _val_ [²](#evaluated-conditionals)                  |
 | @if:key=val{inline\|sample}  | sample either "inline" or "sample" if "key" if _key_ is defined as _val_[²](#evaluated-conditionals) |
-| @if:key!=val%prop%           | sample from prop if "key" is **not** defined as _val_ [3](#evaluated-conditionals)                   |
-| @if:key!=val{inline\|sample} | sample either "inline" or "sample" if "key" is **not** defined as _val_ [3](#evaluated-conditionals) |
-
-### Capitalization
-
-| syntax          | result                                                                                               |
-| --------------- | ---------------------------------------------------------------------------------------------------- |
-| ^%any%          | capitalize the first letter of finalized selection (`hello world` => `Hello world`)                  |
-| ^{hello\|world} | same as above for "hello" or "world" ("Hello", "World")                                              |
-| ^^%any%         | capitalize the first letter of all words in the finalized selection (`hello world` => `Hello World`) |
-| ^^^%any%        | capitalize all letters in the finalized selection (`hello world` => `HELLO WORLD`)                   |
-
-### Inline Definitions
-
-Defining a key with the @syntax will not render it inline. If you need to define something then use it immediately, define the key then call it again using prop syntax:
-
-| syntax                                                                  | result                    |
-| ----------------------------------------------------------------------- | ------------------------- |
-| `the sky is: @sky{stormy\|cloudy\|overcast\|partly cloudy\|clear}`      | the sky is:               |
-| `the sky is: @sky{stormy\|cloudy\|overcast\|partly cloudy\|clear} @sky` | the sky is: partly cloudy |
+| @if:key!=val%prop%           | sample from prop if "key" is **not** defined as _val_ [²](#evaluated-conditionals)                   |
+| @if:key!=val{inline\|sample} | sample either "inline" or "sample" if "key" is **not** defined as _val_ [²](#evaluated-conditionals) |
 
 ### Evaluated Conditionals
 
@@ -283,11 +272,33 @@ However, because these keys must resolve to a single value, best practice is to 
 
 Additionally, these values are case sensitive. `@if:foo=bar` will fail if `foo` equals `Bar`
 
+## Compositional Selection
+
+| syntax                                          | result                                                                                  |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------- |
+| @compose(%propA%\_%propB%)                      | create a selection from the statement within the parentheses [³](#composing-selections) |
+| @compose({inlineA\|inlineB}-{inlineC\|inlineD}) | same as above, but with inline selection sets [³](#composing-selections)                |
+| @compose({inlineA\|inlineB}and%propB%)          | same as above, but with a mixed series of sets [³](#composing-selections)               |
+| @compose(selection\_%propB%)                    | same as above, but with a static element[³](#composing-selections)                      |
+
+### Composing Selections
+
+The `@compose` syntax resolves the statement inside the parentheses and creates a sample selection of the result. Once the inner statement is _completely resolved_, it will wrap it in `%` characters to produce a selection. For example, `@compose(hello-{everyone|world})` would resolve to `%hello-everyone%` or `%hello-world%`, which would be replaced with selections from the `hello-world` or `hello-everyone` selection sets on the next generation pass.
+
+## Capitalization
+
+| syntax          | result                                                                                               |
+| --------------- | ---------------------------------------------------------------------------------------------------- |
+| ^%any%          | capitalize the first letter of finalized selection (`hello world` => `Hello world`)                  |
+| ^{hello\|world} | same as above for "hello" or "world" ("Hello", "World")                                              |
+| ^^%any%         | capitalize the first letter of all words in the finalized selection (`hello world` => `Hello World`) |
+| ^^^%any%        | capitalize all letters in the finalized selection (`hello world` => `HELLO WORLD`)                   |
+
 ## Reserved Characters
 
 - global: `{}` `@` `^` `%`
 - within a sample set: `|`
-- `:` is reserved only if it is immediately proceeded by an integer
+- `compose`, `if`, `:`, `!`, `()` and `=` are reserved in `@` syntactical statements
 
 These characters can be escaped with a backtick (\`). This is because the backslash (\\) is a valid JSON escape character. Backticks can be written as `` (two consecutive backticks)
 
@@ -300,6 +311,8 @@ Additionally, the following strings cannot be used as definitions or value keys:
 - `templates`
 
 though they may be included in other strings. `mytemplates`, for example, is valid.
+
+# Data Structure
 
 ## Definitions vs Selections vs Templates
 
@@ -460,7 +473,7 @@ Capitalization sequences should come first in a set of reserved characters:
 - ❌ `%^another_one%`
 - ✅ `^%another_one%`
 
-# Data Structure
+# Generator Libraries
 
 ## LibraryData
 

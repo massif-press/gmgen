@@ -36,7 +36,7 @@
           </div>
           <div><btn short @click="$router.push('/dynamic')">DYNAMIC</btn></div>
           <div>
-            <btn short @click="$router.push('/weighted')">COMPOSITIONAL</btn>
+            <btn short @click="$router.push('/weighted')">CONFIGURABLE</btn>
           </div>
           <div>
             <btn short @click="$router.push('/interactive')">INTERACTIVE</btn>

@@ -2,12 +2,12 @@
   <div>
     <DemoLayout
       title="ADVANCED DEMO"
-      subtitle="RPG Weapon Generator with a complex static JSON library"
+      subtitle="Kobold Character Generator with a complex static JSON library"
     >
       <template #generator>
         <div class="grid">
           <div class="w-96 justify-self-center">
-            <Btn @click="generate()">GENERATE WEAPON</Btn>
+            <Btn @click="generate()">GENERATE KOBOLD</Btn>
           </div>
           <div
             class="w-1/2 justify-self-center py-2 px-4 m-3 rounded-md bg-slate-800"

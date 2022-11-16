@@ -1,0 +1,55 @@
+{
+  "key": "inventory",
+  "values": {
+    "list": [
+      { "value": "<li>&emsp;· @compose(inv_%class%)</li>", "weight": 4 },
+      {
+        "value": "<li>&emsp;· @compose(inv_%class%)</li><li>&emsp;· @compose(inv_common)</li>",
+        "weight": 5
+      }
+    ],
+    "inv_thief": [
+      "a {chipped|small|rusted|sharp|oversized} dagger, {carved from bone|stolen from a human caravan|found in an abandoned dwarven mine|coated in a weak poison brewed by their broodmate, %names%}",
+      "a small pouch of flash powder, a gift from {a broodmate|the clan shaman|%name%'s sibling, %names%|a wandering kenku}",
+      "a short {brown|grey|green|olive|tan|drab|torn|ragged|moth-eaten} {tunic|jacket|tabard}{, stolen from a human merchant|, enchanted with a crude hex which muffles the sound of %name%'s footsteps|, half-enchanted with a failed invisibility hex. While wearing it, %name% is visible, but more difficult to notice|:2}",
+      "a small {wooden|metal|leather} case, containing homemade lockpicks and other thief tools",
+      "a few poorly-balanced throwing knives",
+      "a climbing kit, obviously made for much larger hands"
+    ],
+    "inv_warrior": [
+      "a {chipped|small|rusted|sharp} human smallsword, wielded with two claws",
+      "a {long stick|salvaged fencepost|long bone}, fashioned into a crude spear",
+      "a farmer's sickle, {stolen from a nearby town|pilfered from an abandoned farmstead}",
+      "a woodsman's axe, {enchanted with a crude bleeding hex|chipped and rusty|obsessively sharpened}",
+      "a {stolen|} blacksmith's hammer",
+      "a crude flint axe, bound with {plant fiber|raw leather}",
+      "a net made of {jute|reedy plant fiber|rawhide}",
+      "a short, but {sturdy|thick|substantial}, club {, cracked and worn|, broken from a larger piece of construction timber| of green wood, still with a few small leaves}",
+      "a small pouch containing {a few flakes of flint and dry wood shavings|various lengths of twine and rough rope|a few feet of rusty metal chain|small river stones}"
+    ],
+    "inv_ranger": [
+      "a handmade {ash|elm|birch|rowan|yew} bow, {rough-hewn,|little more than a green branch,|surprisingly well-crafted,} strung with {vegetable fiber|giant spider silk|animal sinew|rawhide}",
+      "a sling made of {rawhide|raw leather|plant fiber} and a pouch of {smooth stones|river rocks|rusty iron shot}",
+      "a {stolen|barely-working|cracked and rusted} human hand crossbow, wielded with two claws",
+      "handmade bola, made from {strips of rawhide|plant fiber|raw jute} and {river rocks|smooth stone|chunks of rusted iron}",
+      "a blowgun, {made from river reed|} and {animal spines|sharpened bone|flint chips}, {coated in a simple poison|fletched with songbird feathers}",
+      "a few poorly-balanced throwing knives"
+    ],
+    "inv_shaman": [
+      "a staff {torn|made} from a {ash|elm|birch|rowan|yew} branch {carved with crude draconic script|from which dangle a variety of crude tokens and fetishes from rawhide straps|covered in spirals of dried animal blood and berry juice}",
+      "the snapped half of a true mage's wand, {still emitting small sparks and wisps of colorful smoke|slowly oozing a trickle of dark blue pitch|the broken end glows gently with an eerie green light|the snapped and frayed end still hot to the touch|now completely devoid of any arcane puissance}",
+      "an ancient tome of incantations in {a long-forgotten|an ancient|an obscure} draconic script, many pages {missing due to rot|have been torn out|completely burnt|stained and unreadable|still thrum with ancient power}",
+      "a small {bone|wood|stone} totem {carved in the shape of a true dragon|a small facsimile of a kobold, with uncut gemstone eyes|completely bound in strips of rawhide|crackling with crude and wild magic|sparking and smelling faintly of ozone}",
+      "a pouch of crude ritual components, such as {small animal bones|small vials of oils and powders|bits of metal and stone} and {fat grubs|scraps of silk and linen|small paper seals and charms}"
+    ],
+    "inv_common": [
+      "a small collection of vials and ampules, {mostly empty|filled with a variety of healing unguents|filled with useful powders and oils}",
+      "a half-used torch, covered in soot",
+      "a tarnished brass scroll case, {empty|containing scraps of a map|containing a small cache of coins and rough gems}",
+      "a heavily-rusted lantern {evidently stolen from a nearby mine|clearly stolen from a nearby town|}",
+      "a small pouch of {leathery jerky|dried grubs|small, dried fish}",
+      "a few empty {jute|linen|canvas|animal hide|raw leather} sacks"
+    ]
+  },
+  "templates": ["<ul>%list%</ul>"]
+}

@@ -7,13 +7,13 @@
     <div class="container p-5 m-5 rounded-2xl bg-slate-700">
       <slot name="generator" />
     </div>
-    <div class="text-xl font-bold tracking-widest">DATA</div>
-    <div class="container p-5 m-5 rounded-2xl bg-slate-700">
-      <slot name="data" />
-    </div>
     <div class="text-xl font-bold tracking-widest">CODE</div>
     <div class="container p-5 m-5 rounded-2xl bg-slate-700">
       <slot name="code" />
+    </div>
+    <div class="text-xl font-bold tracking-widest">DATA</div>
+    <div class="container p-5 m-5 rounded-2xl bg-slate-700">
+      <slot name="data" />
     </div>
   </div>
 </template>
