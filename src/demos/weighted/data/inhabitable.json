@@ -1,6 +1,21 @@
 {
   "key": "inhabitable",
   "definitions": {},
-  "values": {},
-  "templates": ["inhabitable planet"]
+  "values": {
+    "biosphere": [
+      "primitive chemical replicators, predecessors to cellular life",
+      "single-celled {carbon|silicon} based life",
+      "simple multicellular {carbon|silicon}-based life",
+      "primitive plant life",
+      "an extensive and varied biosphere @pct30%civilization%",
+      "a mature biosphere with a multitude of complex life @pct30%civilization%"
+    ],
+    "civilization": [
+      "and a pre-civilizational, but intelligent species",
+      "and multiple intelligent species {in stable equilibrium|at constant war}",
+      "and a burgeoning pre-spaceflight civilization",
+      "and a {major|minor} settlement of an advanced spacefaring civilization"
+    ]
+  },
+  "templates": ["hosts %biosphere%"]
 }

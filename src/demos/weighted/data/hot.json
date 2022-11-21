@@ -1,6 +1,9 @@
 {
   "key": "hot",
-  "definitions": {},
-  "values": {},
-  "templates": ["cold planet"]
+  "values": {
+    "distance": ["a close distance", "0.%d% AU"]
+  },
+  "templates": [
+    "orbits a {red|bright|orange|blue} %star_type% star at %distance%"
+  ]
 }

@@ -1,6 +1,7 @@
 {
   "key": "uninhabitable",
-  "definitions": {},
-  "values": {},
-  "templates": ["uninhabitable planet"]
+  "definitions": {
+    "relic": "but hosts the ruins of an outpost from an ancient advanced civilization, long abandoned"
+  },
+  "templates": ["inhospitable to life @pct5%relic%"]
 }

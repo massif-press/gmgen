@@ -69,7 +69,10 @@
       "ψ",
       "μ",
       "ω"
-    ]
+    ],
+    "material": ["iron", "iron/silicate", "ice", "gas"],
+    "star_type": ["supergiant", "subgiant", "main sequence", "dwarf"],
+    "d": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
   },
   "templates": ["%system_name% {%numeral%:3|%character%}"]
 }

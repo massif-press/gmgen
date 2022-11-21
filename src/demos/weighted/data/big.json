@@ -1,6 +1,4 @@
 {
   "key": "big",
-  "definitions": {},
-  "values": {},
-  "templates": ["big planet"]
+  "templates": ["A {large|huge|massive} %material% planet"]
 }

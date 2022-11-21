@@ -48,7 +48,7 @@
 
         <div class="grid">
           <div class="w-96 justify-self-center">
-            <Btn @click="generate()">GENERATE PROMPT</Btn>
+            <Btn @click="generate()">GENERATE PLANET</Btn>
           </div>
           <div
             class="w-1/2 justify-self-center py-2 px-4 mt-3 rounded-md bg-slate-800"
@@ -105,7 +105,7 @@ export default {
     size: 50,
     temp: 50,
     atmos: 50,
-    output: '<i class="opacity-50">Click the "Generate Prompt" button</i>',
+    output: '<i class="opacity-50">Click the "Generate Planet" button</i>',
     codeStr: codeText,
     dataItems: [] as { filename: string; code: string }[],
   }),

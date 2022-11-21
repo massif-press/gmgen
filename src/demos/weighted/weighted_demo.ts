@@ -7,21 +7,13 @@ const dynamicDemo = (size: number, temp: number, atmos: number): string => {
 
   const myGenerator = new Generator(myLibrary);
 
-  // const template = `<p>@compose({%small%:${
-  //   100 - size
-  // }|%big%:${size}})</p><p>@compose({%hot%:${
-  //   100 - temp
-  // }|%cold%:${temp}})</p><p>@compose({%inhabitable%:${
-  //   100 - atmos
-  // }|%uninhabitable%:${atmos}})</p>`;
-
-  const template = `<div class="text-2xl">%name%</div><hr/><p>{%small%:${
+  const template = `<div class="text-2xl">^%name%</div><hr/><p>^{%small%:${
     100 - size
-  }|%big%:${size}}</p><p>{%hot%:${
+  }|^%big%:${size}}</p><p>^{%hot%:${
     100 - temp
-  }|%cold%:${temp}}</p><p>{%uninhabitable%:${
+  }|^%cold%:${temp}}</p><p>^{%uninhabitable%:${
     100 - atmos
-  }|%inhabitable%:${atmos}}</p>`;
+  }|^%inhabitable%:${atmos}}</p>`;
 
   return myGenerator.Generate(template);
 };

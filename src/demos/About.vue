@@ -47,7 +47,17 @@
         contains API and data structure documentation, as well as implementation
         guidelines.
       </p>
+
       <p class="mt-5">
+        If you're <b>not</b> a software developer &mdash; if you've never
+        written a line of code in your entire life &mdash; and you still want to
+        build something with this tool, don't worry, I'm working on a full and
+        exhaustive walkthrough that will take you step-by-step from zero to a
+        fully-functional random generator on an ad-free, zero-cost website you
+        can present to your fans and customers (or even just your own table).
+      </p>
+
+      <!-- <p class="mt-5">
         If you're <b>not</b> a software developer &mdash; if you've never
         written a line of code in your entire life &mdash; and you still want to
         build something with this tool, don't worry, I've got you covered. Check
@@ -61,7 +71,7 @@
         step-by-step from zero to a fully-functional random generator on an
         ad-free, zero-cost website you can present to your fans and customers
         (or even just your own table).
-      </p>
+      </p> -->
       <p class="mt-5">
         Finally, if you want to support this project, and future tools like
         this, please consider

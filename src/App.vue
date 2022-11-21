@@ -16,7 +16,17 @@
             >
           </div>
           <div>
-            <btn @click="openTab('https://beeftime.itch.io/gm-gen')">GUIDE</btn>
+            <div class="m-0.5">
+              <div :class="`bg-gray-500 py-2 rounded-md w-full text-center`">
+                <div
+                  class="sm:text-xs md:text-sm font-semibold text-gray-300 ext-white tracking-widest align-middle"
+                >
+                  GUIDE
+                </div>
+              </div>
+            </div>
+
+            <!-- <btn @click="openTab('https://beeftime.itch.io/gm-gen')">GUIDE</btn> -->
           </div>
           <div>
             <btn @click="openTab('https://github.com/massif-press/gmgen')"

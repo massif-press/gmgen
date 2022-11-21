@@ -1,6 +1,7 @@
 {
   "key": "small",
-  "definitions": {},
-  "values": {},
-  "templates": ["small planet"]
+  "definitions": {
+    "size": "small"
+  },
+  "templates": ["A {small|tiny} %material% planet"]
 }
