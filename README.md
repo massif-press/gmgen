@@ -66,7 +66,7 @@ It seems complicated (and I've written a lot of words here) but was built to be 
 
 # Demos
 
-TODO
+Several demos and code examples can be found at https://gmgen.netlify.app/
 
 # Usage
 
@@ -88,12 +88,7 @@ To use the generator, we need to provide this generator an object hierarchy of d
 const myLibrary = new Library();
 ```
 
-A [Library](#library) contains one or more [LibraryData](#librarydata). These data can be imported as [static JSON objects](#data-structure) or can be [programmatically generated](#dynamic-generation). Take a look at [Example JSON](#example-json) or
-
-TODO
-these demos
-TODO
-to get started with building Libraries.
+A [Library](#library) contains one or more [LibraryData](#librarydata). These data can be imported as [static JSON objects](#data-structure) or can be [programmatically generated](#dynamic-generation). Take a look at [Example JSON](#example-json) or [these demos](https://gmgen.netlify.app/) to get started with building Libraries.
 
 Multiple LibraryData can be added to a Library, to allow for deep and complex and/or dynamically produced generators. The library can be built or modified with the following functions:
 
