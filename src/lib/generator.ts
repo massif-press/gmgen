@@ -1,11 +1,7 @@
-// TODO: conditionals
-// TODO: capitalization
-// TODO: test compositonals
-
 import _ from 'lodash';
 import GeneratorLibrary from './generatorLibrary';
 import LibraryData from './libraryData';
-import { cLog, FloatBetween, WeightedSelection } from './util';
+import { cLog, logLevel, FloatBetween, WeightedSelection } from './util';
 
 interface templateItem {
   templates: string[];
@@ -17,12 +13,14 @@ type ValueItem = {
 };
 
 class GeneratorOptions {
+  Trim: boolean = true;
   CleanMultipleSpaces: boolean = true;
   CapitalizeFirst: boolean = true;
-  IgnoreMissingKeys: boolean = true;
+  ClearMissingKeys: boolean = true;
   CleanEscapes: boolean = true;
+  ClearBracketSyntax: boolean = true;
   MaxIterations: number = 100;
-  Logging: 'none' | 'errors only' | 'verbose' = 'errors only';
+  Logging: logLevel = logLevel.error;
 }
 
 class Generator {
@@ -32,8 +30,6 @@ class Generator {
   private _timer = 0;
   private _output = '';
   private _options = new GeneratorOptions();
-
-  private _loggingLevel = 'errors only';
 
   constructor(library?: GeneratorLibrary | null, options?: any) {
     this.ValueMap = new Map<string, ValueItem[]>();
@@ -69,18 +65,15 @@ class Generator {
 
   public SetOptions(options: any) {
     for (const key in this._options) {
-      if (options[key]) this._options[key] = options[key];
-      if (key.toLowerCase() === 'logging') this._loggingLevel = options.Logging;
+      if (key in options) this._options[key] = options[key];
     }
   }
 
   public SetOption(key: keyof GeneratorOptions, value: any) {
     this._options[key as any] = value;
-    if (key === 'Logging') this._loggingLevel = value;
   }
 
   public Generate(template?: string | string[] | templateItem): string {
-    this.checkLibrary();
     this.startTimer();
 
     this._output = this.getBaseTemplate(template);
@@ -93,26 +86,29 @@ class Generator {
       this.outerProcess();
 
       if (loops > 2 && this._output === cachedOutput) {
+        this._log(
+          logLevel.verbose,
+          '✅',
+          `Generator output matches cached output; terminating early (${completed}/${this._options.MaxIterations})`
+        );
         loops = 2;
       }
 
       loops--;
       completed++;
     }
-    this.outerProcess(true);
+    // to ensure that Step() works correctly
+    if (this._options.MaxIterations > 1) this.outerProcess();
 
-    if (
-      completed === this._options.MaxIterations &&
-      this._loggingLevel !== 'none'
-    ) {
-      cLog(
+    if (completed === this._options.MaxIterations) {
+      this._log(
+        logLevel.warning,
         '🔁',
-        'Generator has exceeded its iteration limit. This likely means an referenced key cannot be resolved. The FindMissingValues() function can help debug these issues.',
-        'warning'
+        'Generator has exceeded its iteration limit. This likely means an referenced key cannot be resolved. The FindMissingValues() function can help debug these issues.'
       );
     }
 
-    this.endTimer(`Item generated (${completed}  loops)`);
+    this.endTimer(`Item generated (${completed} loops)`);
 
     this.cleanup();
 
@@ -120,18 +116,18 @@ class Generator {
   }
 
   private cleanup() {
-    // this.clearCapitalSyntax();
     this.processCapitals();
     this.clearCapitalSyntax();
-    this.clearBracketSyntax();
+    if (this._options.ClearBracketSyntax) this.clearBracketSyntax();
     if (this._options.CleanMultipleSpaces) this.clearMultipleSpaces();
-    if (this._options.IgnoreMissingKeys) this.clearMissingKeys();
+    if (this._options.ClearMissingKeys) this.clearMissingKeys();
     if (this._options.CleanEscapes) this.cleanEscapes();
+    if (this._options.Trim) this.trim();
   }
 
   private processCapitals() {
-    // group 1 is carats, group 2 is content without syntax
-    const capitalizeRegex = /(?<!\`)(\^+){(.*?)}/g;
+    // group 1 is opening carats, group 2 is content, group 3 is closing carat
+    const capitalizeRegex = /(?<!\`)(\^+)(.*?)(\^)/g;
     const matches = [...this._output.matchAll(capitalizeRegex)];
 
     matches.forEach((match) => {
@@ -143,14 +139,14 @@ class Generator {
         case 2:
           val = match[2]
             .split(' ')
-            .map((w) => w[0].toUpperCase() + w.substring(1))
+            .map((w) => (w[0] ? w[0].toUpperCase() + w.substring(1) : ''))
             .join(' ');
           break;
-        case 1:
-          val = match[2][0].toUpperCase() + match[2].substring(1);
-          break;
         default:
-          return match[2];
+          val = match[2][0]
+            ? match[2][0].toUpperCase() + match[2].substring(1)
+            : '';
+          break;
       }
       this._output = this._output.replace(match[0], val);
     });
@@ -166,6 +162,10 @@ class Generator {
 
   private clearMultipleSpaces() {
     this._output = this._output.replace(/  +/g, ' ');
+  }
+
+  private trim() {
+    this._output = this._output.trim();
   }
 
   private clearMissingKeys() {
@@ -205,12 +205,12 @@ class Generator {
     return contFlags.includes(true);
   }
 
-  private outerProcess(final?: boolean) {
-    this.conditionalSelection(final);
+  private outerProcess() {
+    this.conditionalSelection();
     this.compositionalSelection();
   }
 
-  private conditionalSelection(final?: boolean) {
+  private conditionalSelection() {
     // find all @if and @!if
     // group 0 is full match, group 1 is if/!if, group 2 is key OR key=val, group 3 is content including syntactical elements
     // backtick escapes
@@ -221,22 +221,28 @@ class Generator {
       const key = kArr[0];
       const val = kArr.length === 2 ? kArr[1] : '';
       const mapValue = this.GetValueMap(key);
-      if (mapValue) {
+      if (mapValue.length) {
         if (!val) {
           // if no evaluation, replace on key found
           if (match[1].includes('!'))
             this._output = this._output.replace(match[0], '');
           else this._output = this._output.replace(match[0], match[3]);
-        } else if (mapValue.values.length === 1) {
-          if (val === mapValue.values[0]) {
+        } else {
+          if (val === mapValue[0].value) {
+            console.log('in here');
             if (match[1].includes('!'))
               this._output = this._output.replace(match[0], '');
             else this._output = this._output.replace(match[0], match[3]);
+          } else {
+            if (match[1].includes('!'))
+              this._output = this._output.replace(match[0], match[3]);
+            else this._output = this._output.replace(match[0], '');
           }
         }
-      } else if (final) {
+      } else if (!mapValue || !mapValue.length) {
         if (match[1].includes('!'))
-          this._output = this._output.replace(match[0], '');
+          this._output = this._output.replace(match[0], match[3]);
+        else this._output = this._output.replace(match[0], '');
       }
     });
   }
@@ -386,7 +392,7 @@ class Generator {
   private endTimer(msg: string) {
     let ms = (new Date().getTime() - this._timer).toString();
     if (ms === '0') ms = '<1';
-    if (this._loggingLevel === 'verbose') cLog('⏱️', `${msg} in ${ms}ms`);
+    this._log(logLevel.verbose, '⏱️', `${msg} in ${ms}ms`);
   }
 
   private getBaseTemplate(template: any): string {
@@ -398,63 +404,49 @@ class Generator {
     } else if (template.templates)
       return this.getBaseTemplate(template.templates);
     else {
-      if (this._loggingLevel !== 'none')
-        cLog(
-          `🚨','inappropriate or malformed template/template container sent to generator`,
-          'error'
-        );
+      this._log(
+        logLevel.error,
+        '🚨',
+        'inappropriate or malformed template/template container sent to generator'
+      );
       throw new Error(template);
     }
   }
 
+  public get Options(): GeneratorOptions {
+    return this._options;
+  }
+
   public Define(key: string, value: string) {
-    this.checkLibrary();
     if (!this.HasValueMap(key)) this.ValueMap.set(key, [{ value, weight: 1 }]);
-    else if (this._loggingLevel !== 'none')
-      cLog(
-        '🔒',
-        `A definition already exists for ${key} (${value})`,
-        'warning'
-      );
+    this._log(
+      logLevel.warning,
+      '🔒',
+      `A definition already exists for ${key} (${value})`
+    );
   }
 
   public HasValueMap(key: string): boolean {
-    this.checkLibrary();
     return this.ValueMap.has(key);
   }
 
   public GetValueMap(key: string): ValueItem[] {
-    this.checkLibrary();
     return this.ValueMap.get(key) || [];
   }
 
   public SetValueMap(key: string, data: ValueItem[]) {
-    this.checkLibrary();
+    if (data[0] && !data[0].value) data = LibraryData.PrepValues(data);
     this.ValueMap.set(key, data);
   }
 
   public AddValueMap(key: string, data: ValueItem[]) {
-    this.checkLibrary();
     if (this.HasValueMap(key))
       this.ValueMap.set(key, [...this.GetValueMap(key), ...data]);
-    else this.ValueMap.set(key, data);
+    else this.SetValueMap(key, data);
   }
 
   public DeleteValueMap(key: string) {
-    this.checkLibrary();
     this.ValueMap.delete(key);
-  }
-
-  private checkLibrary() {
-    if (this.Library === undefined) {
-      if (this._loggingLevel !== 'none')
-        cLog(
-          '🈳',
-          'No library loaded! Load a GeneratorLibrary with the LoadLibrary function',
-          'error'
-        );
-      throw new Error('Generator requires a GeneratorLibrary to operate');
-    }
   }
 
   public FindMissingValues(
@@ -464,15 +456,16 @@ class Generator {
     const out: string[] = [];
     const cachedOptions = this._options;
     this.SetOptions({
+      Trim: false,
       CleanMultipleSpaces: false,
+      ClearBracketSyntax: false,
       CapitalizeFirst: false,
-      IgnoreMissingKeys: false,
+      ClearMissingKeys: false,
       MaxIterations: iterations,
       CleanEscapes: false,
       Logging: 'none',
     });
     const res = this.Generate(template);
-
     const inlineRegex = /(?<!\`)%(.*?)%/g;
     const matches = [...res.matchAll(inlineRegex)];
     matches.forEach((match) => {
@@ -484,7 +477,6 @@ class Generator {
   }
 
   public OverlappingDefinitions(): string[] {
-    this.checkLibrary();
     let defs: string[] = [];
 
     this.Library?.Content.map((data: LibraryData) => {
@@ -516,14 +508,18 @@ class Generator {
     this.SetOptions({
       CleanMultipleSpaces: false,
       CapitalizeFirst: false,
-      IgnoreMissingKeys: false,
+      ClearMissingKeys: false,
       MaxIterations: 1,
-      CleanEscapes: true,
+      CleanEscapes: false,
       Logging: 'none',
     });
     const res = this.Generate(template);
     this.SetOptions(cachedOptions);
     return res;
+  }
+
+  private _log(level: logLevel, icon: string, msg: string) {
+    if (level <= this._options.Logging) cLog(level, icon, msg);
   }
 }
 

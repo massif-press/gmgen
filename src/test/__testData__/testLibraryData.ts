@@ -26,6 +26,7 @@ const testData = {
       { value: 'prop2', weight: 3 },
       { value: 'prop3', weight: 1 },
     ],
+    endless_loop: 'loop %endless_loop%',
   },
   templates: [
     'template1: {inline|test} {weighted:2|inline:3|test} @key{inline|key|assign}',

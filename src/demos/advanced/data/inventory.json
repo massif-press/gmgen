@@ -2,9 +2,9 @@
   "key": "inventory",
   "values": {
     "list": [
-      { "value": "<li>&emsp;· @compose(inv_%class%)</li>", "weight": 4 },
+      { "value": "<li>&emsp;· ^@compose(inv_%class%)^</li>", "weight": 4 },
       {
-        "value": "<li>&emsp;· @compose(inv_%class%)</li><li>&emsp;· @compose(inv_common)</li>",
+        "value": "<li>&emsp;· ^@compose(inv_%class%)^</li><li>&emsp;· ^@compose(inv_common)^</li>",
         "weight": 5
       }
     ],

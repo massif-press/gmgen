@@ -6,11 +6,41 @@ import { testData } from './__testData__/testLibraryData';
 describe('constructor', () => {
   const goodData = new LibraryData('test');
   const badData = new LibraryData(null as unknown as string);
+
   it('should load good data', () => {
     expect(() => new GeneratorLibrary(goodData)).not.toThrowError();
   });
+
   it('should throw an error on loading bad data', () => {
     expect(() => new GeneratorLibrary(badData)).toThrowError();
+  });
+
+  it('should load data arrays', () => {
+    expect(
+      () => new GeneratorLibrary([goodData, goodData, goodData])
+    ).not.toThrowError();
+  });
+
+  it('should add any data object with a key property', () => {
+    const weirdData = {
+      key: 'hello',
+      values: ['world'],
+    };
+    expect(() => new GeneratorLibrary(weirdData)).not.toThrowError();
+  });
+
+  it('should load keyed data in an enclosing object', () => {
+    const weirdDataObj = {
+      hello: {
+        key: 'k1',
+        values: ['d1'],
+      },
+      world: {
+        key: 'k2',
+        values: ['d2'],
+      },
+    };
+    expect(() => new GeneratorLibrary(weirdDataObj)).not.toThrowError();
   });
 });
 
@@ -94,6 +124,11 @@ describe('Data', () => {
 
   it('should throw an error if asked to delete missing data', () => {
     expect(() => lib.DeleteData('foo')).toThrowError();
+    expect(clogSpy).toHaveBeenCalled();
+  });
+
+  it('should throw an error if asked to add malformed data', () => {
+    expect(() => lib.AddData('bad data')).toThrowError();
     expect(clogSpy).toHaveBeenCalled();
   });
 

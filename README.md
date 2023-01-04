@@ -64,13 +64,16 @@ To start, create a new Generator:
 const myGenerator = new Generator();
 ```
 
-To use the generator, we need to provide this generator with a Library: an an object hierarchy of data that the generator will pull from to construct output.
+To use the generator, we need to provide this generator an object hierarchy of data that the generator will pull from to construct output. You can do this directly, or with structured data organized into Libraries. The direct method is best used when you're dealing with small dynamic or user-generated data, and libraries are intended for large static or semi-static data. We'll start with the library method, as the direct functions can be used alongside library loading.
+
+### Library Method
 
 ```ts
 const myLibrary = new Library();
 ```
 
 A [Library](#library) contains one or more [LibraryData](#librarydata). These data can be imported as [static JSON objects](#data-structure) or can be [programmatically generated](#dynamic-generation). Take a look at [Example JSON](#example-json) or
+
 TODO
 these demos
 TODO
@@ -112,7 +115,9 @@ const myGenerator = new Generator(myLibrary);
 
 This builds our ValueMap and prepares the generator. It's important to note that loading another library will clear and rebuild the ValueMap, so any manual ValueMap changes must be redone between Library loads.
 
-After a library is loaded, we can modify the ValueMap, a collection of key-value pairs that represent substitutions for specific strings that appear in templates or other substitutions. These get automatically constructed based on the contents of the [LibraryData](#library-data), and will be where gmgen looks first when generating an item. See [Data Structure](#data-structure) for more details.
+### Direct Method
+
+The values in the generator can be modified directly by calling the following functions that collections of key-value pairs that represent substitutions for specific strings that appear in templates or other data. These get automatically constructed when loading a library, but can be manually edited before or after loading libraries. See [Data Structure](#data-structure) for more details.
 
 ```ts
   AddValueMap(key: string, value: ValueInput) // add new values, or merge values at an already-existing key
@@ -158,7 +163,7 @@ class GeneratorOptions {
   IgnoreMissingKeys: boolean; // ignore any missing keys instead of erroring out
   CleanEscapes: boolean; // clean up any remaining unescaped backticks (`)
   MaxIterations: number; // number of times the parser will recursively iterate through the output before it quits
-  Logging: 'none' | 'errors only' | 'verbose'; // the level of logging gmgen will transmit to the console
+  Logging: 'none' | 'errors' | 'verbose'; // the level of logging gmgen will transmit to the console
 }
 ```
 
@@ -251,26 +256,24 @@ Defining a key with the @syntax will not render it inline. If you need to define
 
 ## Conditional Selection
 
-| syntax                       | result                                                                                               |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
-| @pct10%prop%                 | sample from prop 10% of the time, otherwise ignore (01-99)                                           |
-| @pct10{inline\|sample}       | same as above, but for an inline selection set                                                       |
-| @if:key%prop%                | sample from prop if "key" is defined                                                                 |
-| @if:key{inline\|sample}      | sample either "inline" or "sample" if "key" is defined                                               |
-| @if:!key%prop%               | sample from prop if "key" is **not** defined                                                         |
-| @if:!key{inline\|sample}     | sample either "inline" or "sample" if "key" is **not** defined                                       |
-| @if:key=val%prop%            | sample from prop if "key" if _key_ is defined as _val_ [²](#evaluated-conditionals)                  |
-| @if:key=val{inline\|sample}  | sample either "inline" or "sample" if "key" if _key_ is defined as _val_[²](#evaluated-conditionals) |
-| @if:key!=val%prop%           | sample from prop if "key" is **not** defined as _val_ [²](#evaluated-conditionals)                   |
-| @if:key!=val{inline\|sample} | sample either "inline" or "sample" if "key" is **not** defined as _val_ [²](#evaluated-conditionals) |
+| syntax                       | result                                                                                   |
+| ---------------------------- | ---------------------------------------------------------------------------------------- |
+| @pct10%prop%                 | sample from prop 10% of the time, otherwise ignore (01-99)                               |
+| @pct10{inline\|sample}       | same as above, but for an inline selection set                                           |
+| @if:key%prop%                | sample from prop if "key" is defined                                                     |
+| @if:key{inline\|sample}      | sample either "inline" or "sample" if "key" is defined                                   |
+| @if:!key%prop%               | sample from prop if "key" is **not** defined                                             |
+| @if:!key{inline\|sample}     | sample either "inline" or "sample" if "key" is **not** defined                           |
+| @if:key=foo%prop%            | sample from prop if "key" is defined AND is equal to 'foo'                               |
+| @if:key=bar{inline\|sample}  | sample either "inline" or "sample" if "key" is defined AND is equal to 'bar'             |
+| @if:!key=foo%prop%           | sample from prop if "key" **is defined** AND is **not** equal to 'foo'                   |
+| @if:!key=bar{inline\|sample} | sample either "inline" or "sample" if "key" **is defined** AND is **not** equal to 'bar' |
 
-### Evaluated Conditionals
+### Conditional Evaluation
 
-These will only be evaluated correctly if the key is resolved to a single value (it must be defined as "foo" and not "foo|bar" or ["foo", "bar"]). gmgen breaks these resolutions into a separate evaluation process that happens after the core resolution loop, so these will always be evaluated last and so may be set further down the selection tree.
+Evaluations are case sensitive.
 
-However, because these keys must resolve to a single value, best practice is to ensure that all keys used for conditionals are only ever assigned using `@key` syntax or via the `Define()` function.
-
-Additionally, these values are case sensitive. `@if:foo=bar` will fail if `foo` equals `Bar`
+Also note that the negative evaluation uses similar syntax to the negative condition (the `!` is on the key, not the `=`) `!key=foo` tests for `key` not equaling `foo`, whereas (in gmgen) `key!=foo` would test for a key of `key!` equaling foo.
 
 ## Compositional Selection
 
@@ -287,12 +290,12 @@ The `@compose` syntax resolves the statement inside the parentheses and creates 
 
 ## Capitalization
 
-| syntax          | result                                                                                               |
-| --------------- | ---------------------------------------------------------------------------------------------------- |
-| ^%any%          | capitalize the first letter of finalized selection (`hello world` => `Hello world`)                  |
-| ^{hello\|world} | same as above for "hello" or "world" ("Hello", "World")                                              |
-| ^^%any%         | capitalize the first letter of all words in the finalized selection (`hello world` => `Hello World`) |
-| ^^^%any%        | capitalize all letters in the finalized selection (`hello world` => `HELLO WORLD`)                   |
+| syntax           | result                                                                                               |
+| ---------------- | ---------------------------------------------------------------------------------------------------- |
+| ^%any%^          | capitalize the first letter of finalized selection (`hello world` => `Hello world`)                  |
+| ^{hello\|world}^ | same as above for "hello" or "world" ("Hello", "World")                                              |
+| ^^%any%^         | capitalize the first letter of all words in the finalized selection (`hello world` => `Hello World`) |
+| ^^^%any%^        | capitalize all letters in the finalized selection (`hello world` => `HELLO WORLD`)                   |
 
 ## Reserved Characters
 
@@ -451,16 +454,14 @@ this circular reference will render a looping "this is a template containing thi
 
 ### Capitalization
 
-The `^` character will capitalize the following character (eg. `^a` becomes `A`). This is useful for rendering proper nouns correctly as part of a generation sequence. For example, if my list of names is in lowercase but should be rendered with the correct capitals, I could write it as ^{firstname} ^{lastname}, and my final string would render as **J**ohn **S**mith, instead of john smith (as it'd appear in my raw data).
+The `^` character can be used to wrap words, sentences, or substitution sets to apply a capitalization rule to its contents, based on the table below:
 
-Doubling the caret (`^^`) will capitalize every word in the selection set. Tripling (`^^^`) capitalizes every character.
-
-| input                   | output                             |
-| ----------------------- | ---------------------------------- |
-| now playing: {album}    | now playing: illmatic              |
-| now playing: ^{album}   | now playing: Paul's boutique       |
-| now playing: ^^{album}  | now playing: Brand New Second Hand |
-| now playing: ^^^{album} | now playing: MADVILLAINY           |
+| input                    | output                             |
+| ------------------------ | ---------------------------------- |
+| now playing: {album}     | now playing: illmatic              |
+| now playing: ^{album}^   | now playing: Paul's boutique       |
+| now playing: ^^{album}^  | now playing: Brand New Second Hand |
+| now playing: ^^^{album}^ | now playing: MADVILLAINY           |
 
 (every album data string in the above example being saved in lower case)
 
@@ -472,6 +473,8 @@ Capitalization sequences should come first in a set of reserved characters:
 - ✅ `^@pct50{selection}`
 - ❌ `%^another_one%`
 - ✅ `^%another_one%`
+
+Double or triple carets only need to be terminated by a single caret (`^^^hello world^`, not `^^^hello world^^^`), and cannot be nested.
 
 # Generator Libraries
 
@@ -742,4 +745,8 @@ Removes a value item at `key[index]`
 
 **There is no self-referential checking. Does that mean I can make runaway loops?**
 
-> Yes, however the generator will bail after a number of iteration (100 by default), so it's unlikely to cause a crash unless you dramatically increase the iteration limit.
+> Yes, however the generator will bail after a number of iteration (100 by default), so it's unlikely to cause a crash under default settings.
+
+## TODO
+
+- More comprehensive logging

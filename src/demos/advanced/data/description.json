@@ -53,6 +53,6 @@
     ]
   },
   "templates": [
-    "%name% is a kobold of ^^%tribe%, one of {many|a few|very few} {small} {clutches} {of kobolds|of its kin|of these creatures} in the ^%location% of ^%placename%. %name% is %size%, and {rail-thin|thin:2|of average build:7|rotund}, with %scales% scales and %features%. %garb%"
+    "^%name%^ is a kobold of ^^%tribe%^, one of {many|a few|very few} {small} {clutches} {of kobolds|of its kin|of these creatures} in the ^^%location% of %placename%^. ^%name%^ is %size%, and {rail-thin|thin:2|of average build:7|rotund}, with %scales% scales and %features%. %garb%"
   ]
 }

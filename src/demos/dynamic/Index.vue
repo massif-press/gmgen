@@ -155,7 +155,11 @@ export default {
       this[type].splice(index, 1);
     },
     generate() {
-      this.output = demo(this.subject, this.location, this.vibe);
+      this.output = demo({
+        subject: this.subject,
+        location: this.location,
+        vibe: this.vibe,
+      });
     },
   },
 };

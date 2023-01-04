@@ -1,13 +1,5 @@
-const IntBetween = (min: number, max: number) => {
-  return Math.floor(Math.random() * (max - min + 1) + min);
-};
-
 const FloatBetween = (min: number, max: number) => {
   return Math.random() * (max - min) + min;
-};
-
-const Capitalize = (str: string) => {
-  return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
 const WeightedSelection = (collection: any[]) => {
@@ -33,11 +25,20 @@ const WeightedSelection = (collection: any[]) => {
   return selected;
 };
 
-const cLog = (icon: string, msg: string, type?: 'error' | 'warning') => {
+enum logLevel {
+  none = 0,
+  error,
+  warning,
+  verbose,
+  debug,
+}
+
+const cLog = (level: logLevel, icon: string, msg: string) => {
   const tagStyle = `background-color:${
-    type === 'error' ? '#991e2a' : type === 'warning' ? '#612a17' : '#253254'
+    level === 1 ? '#991e2a' : level === 2 ? '#612a17' : '#253254'
   }; color:white; font-weight: bold; padding: 4px; border-radius: 2px`;
-  console.log(`%c${icon} gmgen ${type || 'info'}`, tagStyle, msg);
+
+  console.log(`%c${icon} gmgen`, tagStyle, msg);
 };
 
-export { IntBetween, FloatBetween, Capitalize, WeightedSelection, cLog };
+export { FloatBetween, WeightedSelection, cLog, logLevel };

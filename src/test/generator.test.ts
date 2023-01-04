@@ -1,4 +1,4 @@
-import { Generator } from '../lib/generator';
+import { Generator, ValueItem } from '../lib/generator';
 import GeneratorLibrary from '../lib/generatorLibrary';
 import LibraryData from '../lib/libraryData';
 import * as util from '../lib/util';
@@ -25,33 +25,36 @@ describe('Generator constructor', () => {
     g = new Generator(null, {
       CleanMultipleSpaces: true,
       CapitalizeFirst: true,
-      IgnoreMissingKeys: true,
-      MaxIterations: 100,
+      ClearMissingKeys: true,
+      MaxIterations: 99,
       CleanEscapes: true,
-      Logging: 'errors only',
+      Logging: 'errors',
     });
-    expect(g.Library).to.not.exist;
+    expect(g.Options.MaxIterations).toBe(99);
   });
 
   it('should set both a library and options', () => {
     g = new Generator(new GeneratorLibrary(), {
       CleanMultipleSpaces: true,
       CapitalizeFirst: true,
-      IgnoreMissingKeys: true,
+      ClearMissingKeys: true,
       MaxIterations: 100,
       CleanEscapes: true,
-      Logging: 'errors only',
+      Logging: 'errors',
     });
     expect(g.Library).to.exist;
   });
-});
 
-describe('Generate (failure)', () => {
-  const g = new Generator();
+  it('should correctly set a direct value', () => {
+    g.AddValueMap('direct_key', [{ value: 'some_data', weight: 1 }]);
+    expect(g.GetValueMap('direct_key')[0].value).toBe('some_data');
+  });
 
-  it('should fail without a library', () => {
-    expect(() => g.Generate()).toThrowError();
-    expect(clogSpy).toHaveBeenCalled();
+  it('should correctly set primitive data as values', () => {
+    g.AddValueMap('direct_key_2', [
+      'some_primitive_data',
+    ] as unknown as ValueItem[]);
+    expect(g.GetValueMap('direct_key_2')[0].value).toBe('some_primitive_data');
   });
 });
 
@@ -84,10 +87,20 @@ describe('Generate', () => {
   it('should throw an error when provided a bad template object', () => {
     expect(() => g.Generate({ foo: 'bar' } as any)).toThrowError();
   });
+
   it('should finish without defining a missing keyword', () => {
-    g.SetOption('IgnoreMissingKeys', false);
+    g.SetOption('ClearMissingKeys', false);
     output = g.Generate('%missing_value%');
     expect(output).toBe('%missing_value%');
+  });
+
+  it('should respect an iteration limit', () => {
+    g.SetOptions({
+      MaxIterations: 10,
+    });
+
+    output = g.Generate('%endless_loop%');
+    expect(output).includes('%endless_loop%').and.includes(' loop loop ');
   });
 
   it('should process an inline selection set', () => {
@@ -97,12 +110,12 @@ describe('Generate', () => {
 
   it('should assign and render a syntactical keyword', () => {
     output = g.Generate('@akey{a} %akey%');
-    expect(output).toBe('a a');
+    expect(output).toBe('a');
   });
 
   it('should assign and render a syntactical keyword selection set', () => {
     output = g.Generate('@sk%string_val% %sk%');
-    expect(output).toBe('solo string val solo string val');
+    expect(output).toBe('solo string val');
   });
 
   it('should correctly process @pct directive', () => {
@@ -114,6 +127,58 @@ describe('Generate', () => {
     }
     console.log(`expected: ${iterations / 2}, actual: ${count}`);
     expect(count).to.be.approximately(iterations / 2, iterations / 5);
+  });
+
+  it('should ignore a malformed @pct directive', () => {
+    output = g.Generate('@pct9a%string_val% %pct9a%');
+    expect(output).not.toBe('solo string val');
+  });
+
+  it('should process a true conditional selection', () => {
+    output = g.Generate('@test1{true} @if:test1{hello world}');
+    expect(output).toBe('hello world');
+  });
+
+  it('should ignore a false conditional selection', () => {
+    output = g.Generate('hello @if:test2{world}');
+    expect(output).toBe('hello');
+  });
+
+  it('should process a true negative conditional selection', () => {
+    output = g.Generate('hello @test3{true} @!if:test3{world}');
+    expect(output).toBe('hello');
+  });
+
+  it('should ignore a false negative conditional selection', () => {
+    output = g.Generate('hello @!if:test4{world}');
+    expect(output).toBe('hello world');
+  });
+
+  it('should process a true conditional evaluation', () => {
+    output = g.Generate('@test5{true} @if:test5=true{hello world}');
+    expect(output).toBe('hello world');
+  });
+
+  it('should ignore a false conditional evaluation', () => {
+    output = g.Generate('hello @test6{false} @if:test6=true{world}');
+    expect(output).toBe('hello');
+  });
+
+  it('should process a true negative conditional evaluation', () => {
+    output = g.Generate('hello @test7{true} @!if:test7=true{world}');
+    expect(output).toBe('hello');
+  });
+
+  it('should ignore a false negative conditional evaluation', () => {
+    output = g.Generate('hello @test8{false} @!if:test8=true{world}');
+    expect(output).toBe('hello world');
+  });
+
+  it('should evaluate a compositional selection', () => {
+    output = g.Generate(
+      '@foo_bar{hello world} @foo_baz{hello everyone} @compose(foo_{bar|baz})'
+    );
+    expect(output).to.be.oneOf(['hello world', 'hello everyone']);
   });
 });
 
@@ -167,19 +232,25 @@ describe('Capitalization Syntax', () => {
   let g = new Generator(new GeneratorLibrary());
 
   it('should capitalize the first letter on one carat', () => {
-    expect(g.Generate('^{hello world}')).toBe('Hello world');
+    expect(g.Generate('^hello world^')).toBe('Hello world');
   });
 
   it('should capitalize all words on two carats', () => {
-    expect(g.Generate('^^{hello world}')).toBe('Hello World');
+    expect(g.Generate('^^hello world^')).toBe('Hello World');
   });
 
   it('should capitalize all letters on three carats', () => {
-    expect(g.Generate('^^^{hello world}')).toBe('HELLO WORLD');
+    expect(g.Generate('^^^hello world^')).toBe('HELLO WORLD');
   });
 
   it('should ignore words not in syntax', () => {
     expect(g.Generate('^hello')).toBe('hello');
+  });
+
+  it('should ignore empty selections', () => {
+    expect(g.Generate('^^')).toBe('');
+    expect(g.Generate('^^^')).toBe('');
+    expect(g.Generate('^^^^')).toBe('');
   });
 });
 
@@ -214,32 +285,20 @@ describe('Render Options', () => {
     expect(g.Generate('hello     world')).toBe('hello world');
   });
 
-  it('IgnoreMissingKeys = true should remove missing keys', () => {
-    g.SetOption('IgnoreMissingKeys', true);
+  it('ClearMissingKeys = true should remove missing keys', () => {
+    g.SetOption('ClearMissingKeys', true);
     expect(g.Generate('%hello%')).toBe('');
   });
 
-  it('IgnoreMissingKeys = false should ignore missing keys', () => {
-    g.SetOption('IgnoreMissingKeys', false);
+  it('ClearMissingKeys = false should ignore missing keys', () => {
+    g.SetOption('ClearMissingKeys', false);
     expect(g.Generate('%hello%')).toBe('%hello%');
   });
 
-  it('Logging = "none" should switch logging mode to none', () => {
+  it('SetOption should switch logging mode', () => {
     g.SetOption('Logging', 'none');
     g.Generate('hello %world%');
     expect(clogSpy).toHaveBeenCalledTimes(0);
-  });
-
-  it('Logging = "errors only" should switch logging mode to errors only', () => {
-    g.SetOption('Logging', 'errors only');
-    g.Generate('hello %world%');
-    expect(clogSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('Logging = "verbose" should switch logging mode to verbose', () => {
-    g.SetOption('Logging', 'verbose');
-    g.Generate('hello world');
-    expect(clogSpy).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -247,8 +306,8 @@ describe('FindMissingValues', () => {
   let g = new Generator(new GeneratorLibrary());
 
   it('should find missing values', () => {
-    const missing = g.FindMissingValues('hello %world%');
-    expect(missing).toStrictEqual(['Unresolvable Set Selection: %world%']);
+    const missing = g.FindMissingValues('hello %unfound%');
+    expect(missing).toStrictEqual(['Unresolvable Set Selection: %unfound%']);
   });
 
   it('should not find non-missing values', () => {
@@ -258,41 +317,40 @@ describe('FindMissingValues', () => {
   });
 });
 
-// describe('OverlappingDefinition', () => {
-//   it('should pass alert on overlapping definition', () => {
-//     let g = new Generator(
-//       new GeneratorLibrary(
-//         new LibraryData('a', { test: 'hello' }),
-//         new LibraryData('b', { test: 'world' })
-//       )
-//     );
-//     const od = g.OverlappingDefinitions();
-//     expect(od).toHaveLength(1);
-//     expect(od[0]).toBe('ALERT: overlapping definition at key "test"');
-//   });
+describe('OverlappingDefinition', () => {
+  it('should pass alert on overlapping definition', () => {
+    let lib = new GeneratorLibrary();
+    lib.AddData(new LibraryData('a', { test: 'hello' }));
+    lib.AddData(new LibraryData('b', { test: 'world' }));
 
-//   it('should pass warning on overlapping definition of different cases', () => {
-//     let g = new Generator(
-//       new GeneratorLibrary(
-//         new LibraryData('a', { test: 'hello' }),
-//         new LibraryData('b', { Test: 'world' })
-//       )
-//     );
-//     const od = g.OverlappingDefinitions();
-//     expect(od).toHaveLength(1);
-//     expect(od[0]).toBe(
-//       'Warning: key "Test" already exists, but in a different case. This will not cause an overlap but may be confusing.'
-//     );
-//   });
-// });
+    let g = new Generator(lib);
+
+    const od = g.OverlappingDefinitions();
+    expect(od).toHaveLength(1);
+    expect(od[0]).toBe('ALERT: overlapping definition at key "test"');
+  });
+
+  it('should pass warning on overlapping definition of different cases', () => {
+    let lib = new GeneratorLibrary();
+    lib.AddData(new LibraryData('a', { test: 'hello' }));
+    lib.AddData(new LibraryData('b', { Test: 'world' }));
+
+    let g = new Generator(lib);
+
+    const od = g.OverlappingDefinitions();
+    expect(od).toHaveLength(1);
+    expect(od[0]).toBe(
+      'Warning: key "Test" already exists, but in a different case. This will not cause an overlap but may be confusing.'
+    );
+  });
+});
 
 describe('Step', () => {
   let g = new Generator(new GeneratorLibrary());
 
   it('should only execute one process step', () => {
     let out = g.Step('hello @k{world} %k%');
-    expect(out).toBe('hello world {world}');
-    out = g.Step(out);
-    expect(out).toBe('hello world world');
+    // note the two spaces -- trimming is not complete
+    expect(out).toBe('hello  world');
   });
 });

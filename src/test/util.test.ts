@@ -10,19 +10,6 @@ const testCollection = [
 
 const unweightedCollection = ['hello', 'world'];
 
-test('Capitalize', () => {
-  expect(Util.Capitalize('hello')).toBe('Hello');
-  expect(Util.Capitalize('hello').length).toBe(5);
-});
-
-test('IntBetween', () => {
-  for (let i = iterations; i; i--) {
-    expect(Util.IntBetween(0, 10)).greaterThanOrEqual(0);
-    expect(Util.IntBetween(0, 10)).lessThanOrEqual(10);
-    expect(Util.IntBetween(0, 10)).to.satisfy(Number.isInteger);
-  }
-});
-
 test('FloatBetween', () => {
   for (let i = iterations; i; i--) {
     expect(Util.FloatBetween(0, 1)).greaterThanOrEqual(0);
@@ -52,8 +39,8 @@ test('WeightedSelection', () => {
 
 test('cLog', () => {
   const consoleSpy = vi.spyOn(console, 'log');
-  Util.cLog('a', 'b');
-  Util.cLog('a', 'b', 'error');
-  Util.cLog('a', 'b', 'warning');
+  Util.cLog(3, 'a', 'b');
+  Util.cLog(2, 'a', 'b');
+  Util.cLog(1, 'a', 'b');
   expect(consoleSpy).toHaveBeenCalledTimes(3);
 });
