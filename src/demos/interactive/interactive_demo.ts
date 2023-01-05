@@ -1,4 +1,4 @@
-import gmgen from '../../../dist/src';
+import * as gmgen from 'gmgen';
 
 const interactiveDemo = (
   data: { value: string; weight: number }[],
@@ -12,9 +12,10 @@ const interactiveDemo = (
     },
   });
 
-  const myGenerator = new gmgen.Generator(myLibrary, {
-    Logging: 'debug',
-  });
+  const myGenerator = new gmgen.Generator(myLibrary);
+
+  // Check the Console to see detailed Generator logs
+  myGenerator.SetOption('Logging', gmgen.logLevel.debug);
 
   return myGenerator.Generate(template);
 };
