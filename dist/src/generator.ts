@@ -52,14 +52,14 @@ class Generator {
         this._debugLog(`Processing library definitions`);
 
         for (const def in e.definitions) {
-          this.Define(def, e.definitions[def]);
+          this.Define(def, e.definitions[def as keyof {}]);
         }
       }
       if (e.values) {
         this._debugLog(`Processing library values`);
 
         for (const prop in e.values) {
-          this.AddValueMap(prop, e.values[prop]);
+          this.AddValueMap(prop, e.values[prop as keyof {}]);
         }
       }
       if (e.templates) {
@@ -74,14 +74,14 @@ class Generator {
     this.endTimer('Library loaded');
   }
 
-  public SetOptions(options: any) {
+  public SetOptions(options: GeneratorOptions) {
     for (const key in this._options) {
-      if (key in options) this._options[key] = options[key];
+      if (key in options) this.SetOption(key, options[key]);
     }
   }
 
-  public SetOption(key: keyof GeneratorOptions, value: any) {
-    this._options[key as any] = value;
+  public SetOption(key: string, value: string | number | boolean) {
+    this._options[key] = value;
   }
 
   public Generate(template?: string | string[] | templateItem): string {
@@ -544,7 +544,8 @@ class Generator {
       ClearMissingKeys: false,
       MaxIterations: iterations,
       CleanEscapes: false,
-      Logging: 'none',
+      PreventEarlyExit: true,
+      Logging: logLevel.none,
     });
     const res = this.Generate(template);
     const inlineRegex = /(?<!\`)%(.*?)%/g;
@@ -591,7 +592,10 @@ class Generator {
       ClearMissingKeys: false,
       MaxIterations: 1,
       CleanEscapes: false,
-      Logging: 'none',
+      Trim: false,
+      ClearBracketSyntax: false,
+      PreventEarlyExit: true,
+      Logging: logLevel.none,
     });
     const res = this.Generate(template);
     this.SetOptions(cachedOptions);

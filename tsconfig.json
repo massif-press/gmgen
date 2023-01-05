@@ -7,8 +7,7 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "suppressImplicitAnyIndexErrors": true,
-    "types": ["vitest/globals"]
+    "suppressImplicitAnyIndexErrors": true
   },
   "include": [
     "env.d.ts",

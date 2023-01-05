@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "commonjs",
+    "declaration": true,
+    "esModuleInterop": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "outDir": "./lib",
+    "strict": true,
+    "types": ["jest", "node", "@testing-library/jest-dom"]
+  },
+  "files": ["global.d.ts"],
+  "include": ["src", "jest-setup.ts"],
+  "exclude": ["node_modules"]
+}

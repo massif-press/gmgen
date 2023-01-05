@@ -1,0 +1,32 @@
+{
+  "name": "lib",
+  "version": "1.0.0",
+  "description": "A text-replacement engine with some extra features, meant for use in and around TTRPGs",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/massif-press/gmgen.git"
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^8.19.1",
+    "@types/jest": "^29.2.5",
+    "@types/testing-library__jest-dom": "^5.14.5",
+    "jest": "^29.3.1",
+    "jest-extended": "^3.2.1",
+    "ts-jest": "^29.0.3",
+    "typescript": "^4.9.4"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --config jestconfig.json"
+  },
+  "author": "Massif Press",
+  "license": "GNU General Public License"
+}

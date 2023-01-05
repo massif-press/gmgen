@@ -16,14 +16,4 @@ export default defineConfig({
       esmExternals: true,
     },
   },
-  test: {
-    include: ['src/**/*.test.ts'],
-    globals: true,
-    rage: {
-      include: ['src/**/*.ts', '!src/**/*.{d}.ts'],
-      reportsDirectory: 'coverage',
-      enabled: true,
-      reporter: ['text', 'lcov', 'json'],
-    },
-  },
 });

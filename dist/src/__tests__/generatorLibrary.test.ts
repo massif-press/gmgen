@@ -1,6 +1,6 @@
-import GeneratorLibrary from '../lib/generatorLibrary';
-import LibraryData from '../lib/libraryData';
-import * as util from '../lib/util';
+import GeneratorLibrary from '../generatorLibrary';
+import LibraryData from '../libraryData';
+import * as util from '../util';
 import { testData } from './__testData__/testLibraryData';
 
 describe('constructor', () => {
@@ -54,7 +54,7 @@ describe('Content', () => {
 });
 
 describe('Libraries', () => {
-  const clogSpy = vi.spyOn(util, 'cLog');
+  const clogSpy = jest.spyOn(util, 'cLog');
   const data = LibraryData.Convert(testData);
   const lib = new GeneratorLibrary(data);
 
@@ -80,7 +80,7 @@ describe('Libraries', () => {
 });
 
 describe('Data', () => {
-  const clogSpy = vi.spyOn(util, 'cLog');
+  const clogSpy = jest.spyOn(util, 'cLog');
   const lib = new GeneratorLibrary();
   lib.AddData(
     new LibraryData('test', { def1: 'def1' }, { val1: 'val1' }, ['template1'])

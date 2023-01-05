@@ -1,15 +1,14 @@
-import { Generator } from '../../lib/generator';
-import GeneratorLibrary from '../../lib/generatorLibrary';
-import { logLevel } from '../../lib/util';
+import gmgen from '../../../dist/src';
+
 import * as data from './data';
 
 const dynamicDemo = (size: number, temp: number, atmos: number): string => {
-  const myLibrary = new GeneratorLibrary(data);
+  const myLibrary = new gmgen.GeneratorLibrary(data);
 
-  const myGenerator = new Generator(myLibrary);
+  const myGenerator = new gmgen.Generator(myLibrary);
 
   // Check the Console to see detailed Generator logs
-  myGenerator.SetOption('Logging', logLevel.debug);
+  myGenerator.SetOption('Logging', gmgen.logLevel.debug);
 
   const template = `<div class="text-2xl">^%name%</div><hr/><p>^{%small%:${
     100 - size

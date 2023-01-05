@@ -1,13 +1,13 @@
-import { Generator, ValueItem } from '../lib/generator';
-import GeneratorLibrary from '../lib/generatorLibrary';
-import LibraryData from '../lib/libraryData';
-import * as util from '../lib/util';
+import { Generator, ValueItem } from '../generator';
+import GeneratorLibrary from '../generatorLibrary';
+import LibraryData from '../libraryData';
+import * as util from '../util';
 import { testData } from './__testData__/testLibraryData';
 
-let clogSpy = vi.spyOn(util, 'cLog');
+let clogSpy = jest.spyOn(util, 'cLog');
 
 beforeEach(() => {
-  clogSpy = vi.spyOn(util, 'cLog');
+  clogSpy = jest.spyOn(util, 'cLog');
 });
 
 describe('Generator constructor', () => {
@@ -96,9 +96,7 @@ describe('Generate', () => {
   });
 
   it('should respect an iteration limit', () => {
-    g.SetOptions({
-      MaxIterations: 10,
-    });
+    g.SetOption('MaxIterations', 10);
 
     output = g.Generate('%endless_loop%');
     expect(output).includes('%endless_loop%').and.includes(' loop loop ');

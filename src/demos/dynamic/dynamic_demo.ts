@@ -1,16 +1,14 @@
-import { Generator } from '../../lib/generator';
-import GeneratorLibrary from '../../lib/generatorLibrary';
-import { logLevel } from '../../lib/util';
+import gmgen from '../../../dist/src';
 
 const dynamicDemo = (data: {
   subject: string[];
   location: string[];
   vibe: string[];
 }): string => {
-  const myGenerator = new Generator();
+  const myGenerator = new gmgen.Generator();
 
   // Check the Console to see detailed Generator logs
-  myGenerator.SetOption('Logging', logLevel.debug);
+  myGenerator.SetOption('Logging', gmgen.logLevel.debug);
 
   for (const key in data) {
     myGenerator.AddValueMap(key, data[key]);

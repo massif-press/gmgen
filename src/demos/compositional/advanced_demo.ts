@@ -1,16 +1,15 @@
-import { Generator } from '../../lib/generator';
-import GeneratorLibrary from '../../lib/generatorLibrary';
-import { logLevel } from '../../lib/util';
+import gmgen from '../../../dist/src';
+
 import * as data from './data';
 
 const advancedDemo = (): string => {
-  const weaponLibrary = new GeneratorLibrary(data);
-  const myGenerator = new Generator(weaponLibrary, {
+  const weaponLibrary = new gmgen.GeneratorLibrary(data);
+  const myGenerator = new gmgen.Generator(weaponLibrary, {
     Logging: 'verbose',
   });
 
   // Check the Console to see detailed Generator logs
-  myGenerator.SetOption('Logging', logLevel.debug);
+  myGenerator.SetOption('Logging', gmgen.logLevel.debug);
 
   return myGenerator.Generate(data.itemTemplate);
 };

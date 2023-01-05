@@ -1,12 +1,10 @@
-import { Generator } from '../../lib/generator';
-import GeneratorLibrary from '../../lib/generatorLibrary';
-import LibraryData from '../../lib/libraryData';
+import gmgen from '../../../dist/src';
 
 const interactiveDemo = (
   data: { value: string; weight: number }[],
   template: string
 ): string => {
-  const myLibrary = new GeneratorLibrary();
+  const myLibrary = new gmgen.GeneratorLibrary();
   myLibrary.AddData({
     key: 'newLibrary',
     values: {
@@ -14,7 +12,7 @@ const interactiveDemo = (
     },
   });
 
-  const myGenerator = new Generator(myLibrary, {
+  const myGenerator = new gmgen.Generator(myLibrary, {
     Logging: 'debug',
   });
 

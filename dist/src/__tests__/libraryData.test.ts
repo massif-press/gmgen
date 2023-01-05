@@ -1,5 +1,5 @@
-import LibraryData from '../lib/libraryData';
-import * as util from '../lib/util';
+import LibraryData from '../libraryData';
+import * as util from '../util';
 import { keylessData, testData } from './__testData__/testLibraryData';
 
 describe('constructor', () => {
@@ -13,7 +13,7 @@ describe('constructor', () => {
 });
 
 describe('Convert', () => {
-  const clogSpy = vi.spyOn(util, 'cLog');
+  const clogSpy = jest.spyOn(util, 'cLog');
   it('should throw an error on keyless or non-JSON data', () => {
     expect(() => LibraryData.Convert(keylessData)).toThrowError();
     expect(() =>
@@ -59,7 +59,7 @@ describe('Convert', () => {
 });
 
 describe('Define', () => {
-  const clogSpy = vi.spyOn(util, 'cLog');
+  const clogSpy = jest.spyOn(util, 'cLog');
   const ld = new LibraryData('ld');
   it('should set a keyed definition', () => {
     ld.Define('hello', 'world');
@@ -78,7 +78,7 @@ describe('Define', () => {
 });
 
 describe('Templates', () => {
-  const clogSpy = vi.spyOn(util, 'cLog');
+  const clogSpy = jest.spyOn(util, 'cLog');
   const ld = new LibraryData('ld');
 
   it('should add templates passed as args', () => {
@@ -199,7 +199,7 @@ describe('ValueItems', () => {
 });
 
 describe('PrepValues', () => {
-  const clogSpy = vi.spyOn(util, 'cLog');
+  const clogSpy = jest.spyOn(util, 'cLog');
   let values = ['a:99', 'b', 'c', 'e', 'f', 'g'];
   let weights = [1, 2, 3];
   let out = LibraryData.PrepValues(values, weights);
