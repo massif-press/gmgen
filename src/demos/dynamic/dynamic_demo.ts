@@ -1,4 +1,4 @@
-import gmgen from '../../../dist/src';
+import * as gmgen from 'gmgen';
 
 const dynamicDemo = (data: {
   subject: string[];

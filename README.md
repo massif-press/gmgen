@@ -4,6 +4,7 @@
 
 - [gmgen](#gmgen)
   - [Contents](#contents)
+  - [Installation](#installation)
 - [Overview](#overview)
 - [How it works](#how-it-works)
 - [Demos](#demos)
@@ -46,6 +47,16 @@
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
+## Installation
+
+gmgen can be installed as an npm package with the following command
+
+`npm install gmgen`
+
+or
+
+`yarn add gmgen`
+
 # Overview
 
 This is a standalone app wrapper for a set of upcoming COMP/CON features related to the automatic generation of narrative elements for LANCER games. One it's far enough along to be merged it will be incorporated as a node package and published for other Lancer-related works to use.
@@ -70,7 +81,21 @@ Broadly, gmgen consists of Libraries (which contain the raw data used in generat
 
 ## Setup
 
-To start, create a new Generator:
+First, import gmgen into your code with
+
+```ts
+import * as gmgen from 'gmgen';
+```
+
+or per component, eg:
+
+```ts
+import { Generator } from 'gmgen';
+```
+
+The rest of this guide will assume that you are importing per-component.
+
+Then, create a new Generator:
 
 ```ts
 const myGenerator = new Generator();

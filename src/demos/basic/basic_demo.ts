@@ -1,4 +1,4 @@
-import gmgen from '../../../dist/src';
+import * as gmgen from 'gmgen';
 
 import data from './data/basic_example_data.json';
 
