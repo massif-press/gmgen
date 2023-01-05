@@ -33,11 +33,12 @@ enum logLevel {
   debug,
 }
 
-const cLog = (level: logLevel, icon: string, msg: string) => {
+const cLog = (level: logLevel, msg: string, icon?: string) => {
   const tagStyle = `background-color:${
     level === 1 ? '#991e2a' : level === 2 ? '#612a17' : '#253254'
   }; color:white; font-weight: bold; padding: 4px; border-radius: 2px`;
 
+  if (!icon) icon = level === 1 ? '🚨' : level === 2 ? '⚠️' : '⚙️';
   console.log(`%c${icon} gmgen`, tagStyle, msg);
 };
 

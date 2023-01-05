@@ -29,7 +29,7 @@ class GeneratorLibrary {
   public HasLibrary(key: string | LibraryData): boolean {
     const k = this.getKeyStr(key);
     if (k) return this.contentIndex(k) > -1;
-    cLog(1, '📙', 'Bad parameter passed to Library.HasLibrary');
+    cLog(1, 'Bad parameter passed to Library.HasLibrary', '📙');
     throw new Error(`${key} is not string or LibraryData`);
   }
 
@@ -41,7 +41,7 @@ class GeneratorLibrary {
 
   public AddData(data: any) {
     if (!data.key) {
-      cLog(1, '📙', 'Item passed to Library has no key');
+      cLog(1, 'Item passed to Library has no key', '📙');
       throw new Error(`${data} does not include key field`);
     }
     if (this.HasLibrary(data)) this.mergeData(data as LibraryData);
@@ -84,8 +84,8 @@ class GeneratorLibrary {
     if (!this.HasLibrary(key)) {
       cLog(
         1,
-        '📙',
-        'Error deleting LibraryData: LibraryData of key ${key} not found in library'
+        'Error deleting LibraryData: LibraryData of key ${key} not found in library',
+        '📙'
       );
       throw new Error(`${key} not found`);
     }

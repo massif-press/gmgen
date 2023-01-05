@@ -60,6 +60,7 @@ describe('Generator constructor', () => {
 
 describe('Generate', () => {
   const g = new Generator();
+  g.SetOption('Logging', util.logLevel.debug);
   const dataLib = new GeneratorLibrary(LibraryData.Convert(testData));
 
   g.LoadLibrary(dataLib);

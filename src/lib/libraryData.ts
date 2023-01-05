@@ -25,16 +25,13 @@ class LibraryData {
     try {
       c = typeof json === 'string' ? JSON.parse(json) : json;
     } catch (error) {
-      cLog(
-        `📙 Error converting object to LibraryData: item is not valid JSON`,
-        'error'
-      );
+      cLog(1, `Error converting object to LibraryData: item is not valid JSON`);
       throw new Error(`${json}`);
     }
     if (!c.key) {
       cLog(
-        `🔑 Error converting object to LibraryData: item lacks key property`,
-        'error'
+        1,
+        `Error converting object to LibraryData: item lacks key property`
       );
       throw new Error(`object has no key field: ${c}`);
     }
@@ -188,7 +185,7 @@ class LibraryData {
       v = values.map((x: any) => x.value);
       w = values.map((x: any) => x.weight || 1);
     } else {
-      cLog('🚨', 'Inappropriate or malformed value item detected', 'error');
+      cLog(1, 'Inappropriate or malformed value item detected');
       throw new Error(values);
     }
 
@@ -218,11 +215,11 @@ class LibraryData {
 
   public checkIndex(index: number, arrKey: string) {
     if (!Number.isInteger(index)) {
-      cLog(`📙`, `Error setting ${arrKey}: inappropriate index value`, 'error');
+      cLog(1, `Error setting ${arrKey}: inappropriate index value`);
       throw new Error(`${index} cannot be used as index`);
     }
     if (index > _.property(`this.${arrKey}`).length || index < 0) {
-      cLog(`📙 Error setting ${arrKey}: index exceeds array bounds`, 'error');
+      cLog(1, `Error setting ${arrKey}: index exceeds array bounds`);
       throw new Error(
         `Index ${index} exceeds array bounds of 0-${
           _.property(`this.${arrKey}`).length
@@ -234,9 +231,9 @@ class LibraryData {
   private checkKey(key: string, objKey: string) {
     if (!_.has(this, `${objKey}.${key}`)) {
       cLog(
-        `📙`,
+        1,
         `Error clearing ${objKey}: LibraryData contains no ${objKey} for ${key}`,
-        'error'
+        `📙`
       );
       throw new Error(`LibraryData is undefined at ${objKey}.${key}`);
     }

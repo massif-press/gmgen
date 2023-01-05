@@ -12,9 +12,6 @@
     - [Library Method](#library-method)
     - [Direct Method](#direct-method)
   - [Generation](#generation)
-  - [Rendering Options](#rendering-options)
-    - [CleanMultipleSpaces](#cleanmultiplespaces)
-    - [IgnoreMissingKeys](#ignoremissingkeys)
   - [Debugging](#debugging)
 - [Syntax](#syntax)
   - [Basic Selection](#basic-selection)
@@ -46,7 +43,6 @@
     - [Values](#values)
     - [Value Items](#value-items)
 - [FAQ](#faq)
-  - [TODO](#todo)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
@@ -170,23 +166,32 @@ The second optional parameter is a GeneratorOptions object:
 
 ```ts
 class GeneratorOptions {
+  ClearMissingKeys: boolean; // remove any unresolvable selection sets from final output
+  ClearBracketSyntax: boolean; // remove any remaining syntactic elements from final output
+  Trim: boolean; // remove extra whitespace from the beginning and end of the output
   CleanMultipleSpaces: boolean; // remove all whitespace segments greater than length 1
-  IgnoreMissingKeys: boolean; // ignore any missing keys instead of erroring out
   CleanEscapes: boolean; // clean up any remaining unescaped backticks (`)
   MaxIterations: number; // number of times the parser will recursively iterate through the output before it quits
-  Logging: 'none' | 'errors' | 'verbose'; // the level of logging gmgen will transmit to the console
+  PreventEarlyExit: boolean; // force execution of all iterations (see note below)
+  Logging: 'none' | 'error' | 'warning' | 'verbose' | 'debug'; // the level of logging gmgen will transmit to the console
 }
 ```
+
+> By default, if gmgen notices that output is not changing between full generation steps, it will assume that the output is complete, or at least nothing further can be done with it, and complete the generation process even if it hasn't hit the iteration limit. Setting the `PreventEarlyExit` option will prevent this behavior.
 
 If no second parameter is supplied, the following default options will be used:
 
 ```ts
-  {
-    CleanMultipleSpaces: true,
-    IgnoreMissingKeys: true,
-    CleanEscapes: true
-    MaxIterations: 100
-  }
+{
+  ClearMissingKeys: boolean = true;
+  ClearBracketSyntax: boolean = true;
+  Trim: boolean = true;
+  CleanMultipleSpaces: boolean = true;
+  CleanEscapes: boolean = true;
+  MaxIterations: number = 100;
+  PreventEarlyExit: boolean = false;
+  Logging: logLevel = 'error';
+}
 ```
 
 The generator repeats the following loop until it can't find anything else to do or it hits its MaxIterations value:
@@ -200,17 +205,7 @@ The generator repeats the following loop until it can't find anything else to do
 | 5    | find and replace keywords, resolve other selection sets                       |
 | 6    | increment iteration counter and return to step #1                             |
 
-Once this process finishes, the generator will finalize this still based on the GeneratorOptions parameters:
-
-## Rendering Options
-
-### CleanMultipleSpaces
-
-Reduces all non-newline whitespace to a single space.
-
-### IgnoreMissingKeys
-
-Finds and removes all unprocessed keys
+Once this process finishes, the generator will finalize this still based on the GeneratorOptions parameters.
 
 ## Debugging
 
@@ -757,7 +752,3 @@ Removes a value item at `key[index]`
 **There is no self-referential checking. Does that mean I can make runaway loops?**
 
 > Yes, however the generator will bail after a number of iteration (100 by default), so it's unlikely to cause a crash under default settings.
-
-## TODO
-
-- More comprehensive logging

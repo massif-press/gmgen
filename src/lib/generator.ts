@@ -15,11 +15,11 @@ type ValueItem = {
 class GeneratorOptions {
   Trim: boolean = true;
   CleanMultipleSpaces: boolean = true;
-  CapitalizeFirst: boolean = true;
   ClearMissingKeys: boolean = true;
   CleanEscapes: boolean = true;
   ClearBracketSyntax: boolean = true;
   MaxIterations: number = 100;
+  PreventEarlyExit: boolean = false;
   Logging: logLevel = logLevel.error;
 }
 
@@ -38,22 +38,33 @@ class Generator {
   }
 
   public LoadLibrary(library: GeneratorLibrary) {
+    this._debugLog('Loading Library');
     this.startTimer();
 
     this.Library = library;
 
-    library.Content.forEach((e: LibraryData) => {
+    library.Content.forEach((e: LibraryData, i: Number) => {
+      this._debugLog(
+        `Processing library content (${i} of ${library.Content.length})`
+      );
+
       if (e.definitions) {
+        this._debugLog(`Processing library definitions`);
+
         for (const def in e.definitions) {
           this.Define(def, e.definitions[def]);
         }
       }
       if (e.values) {
+        this._debugLog(`Processing library values`);
+
         for (const prop in e.values) {
           this.AddValueMap(prop, e.values[prop]);
         }
       }
       if (e.templates) {
+        this._debugLog(`Processing library templates`);
+
         e.templates.forEach((value) => {
           this.AddValueMap(e.key, [{ value, weight: 1 }]);
         });
@@ -74,22 +85,32 @@ class Generator {
   }
 
   public Generate(template?: string | string[] | templateItem): string {
+    this._debugLog('Beginning generation');
     this.startTimer();
 
     this._output = this.getBaseTemplate(template);
     let loops = this._options.MaxIterations;
     let completed = 0;
     while (loops > 0) {
+      this._debugLog(
+        `Beginning generation loop (${completed + 1}/${
+          this._options.MaxIterations
+        })`
+      );
+
       let cachedOutput = this._output;
 
       this.innerProcess();
       this.outerProcess();
 
-      if (loops > 2 && this._output === cachedOutput) {
+      if (
+        loops > 2 &&
+        this._output === cachedOutput &&
+        !this._options.PreventEarlyExit
+      ) {
         this._log(
           logLevel.verbose,
-          '✅',
-          `Generator output matches cached output; terminating early (${completed}/${this._options.MaxIterations})`
+          `Generator output matches cached output; terminating early`
         );
         loops = 2;
       }
@@ -103,7 +124,6 @@ class Generator {
     if (completed === this._options.MaxIterations) {
       this._log(
         logLevel.warning,
-        '🔁',
         'Generator has exceeded its iteration limit. This likely means an referenced key cannot be resolved. The FindMissingValues() function can help debug these issues.'
       );
     }
@@ -116,6 +136,7 @@ class Generator {
   }
 
   private cleanup() {
+    this._debugLog('Starting postprocessing...');
     this.processCapitals();
     this.clearCapitalSyntax();
     if (this._options.ClearBracketSyntax) this.clearBracketSyntax();
@@ -123,12 +144,19 @@ class Generator {
     if (this._options.ClearMissingKeys) this.clearMissingKeys();
     if (this._options.CleanEscapes) this.cleanEscapes();
     if (this._options.Trim) this.trim();
+    this._debugLog('Postprocessing complete');
   }
 
   private processCapitals() {
     // group 1 is opening carats, group 2 is content, group 3 is closing carat
     const capitalizeRegex = /(?<!\`)(\^+)(.*?)(\^)/g;
     const matches = [...this._output.matchAll(capitalizeRegex)];
+
+    if (matches.length) {
+      this._debugLog(
+        `Found ${matches.length} capitalization sets, processing...`
+      );
+    }
 
     matches.forEach((match) => {
       let val;
@@ -153,32 +181,41 @@ class Generator {
   }
 
   private clearCapitalSyntax() {
+    this._debugLog('Cleaning remaining capital syntax...');
+
     this._output = this._output.replace(/(?<!`)(\^+)/g, '');
   }
 
   private clearBracketSyntax() {
+    this._debugLog('Cleaning remaining bracket syntax...');
     this._output = this._output.replace(/(?<!`)[{}]/g, '');
   }
 
   private clearMultipleSpaces() {
+    this._debugLog('Cleaning multiple whitespace...');
     this._output = this._output.replace(/  +/g, ' ');
   }
 
   private trim() {
+    this._debugLog('Trimming starting/ending whitespace...');
+
     this._output = this._output.trim();
   }
 
   private clearMissingKeys() {
+    this._debugLog('Cleaning unresolvable keys...');
     const missingKeyRegex = /(?<!\`)%(.*?)%/g;
     const matches = [...this._output.matchAll(missingKeyRegex)];
     matches.forEach((match) => {
       if (!this.HasValueMap(match[1])) {
+        this._debugLog(`Missing key detected (${match[1]}), removing`);
         this._output = this._output.replace(match[0], '');
       }
     });
   }
 
   private cleanEscapes() {
+    this._debugLog('Cleaning escapes');
     this._output = this._output.replace(/`/g, '');
   }
 
@@ -216,7 +253,13 @@ class Generator {
     // backtick escapes
     const pctRegex = /(?<!\`)@(!if|if):(\S*)([{%].*?[}%])/g;
     const matches = [...this._output.matchAll(pctRegex)];
+    if (matches.length) {
+      this._debugLog(
+        `Found ${matches.length} conditional selections, processing...`
+      );
+    }
     matches.forEach((match) => {
+      this._debugLog(`Evaluating conditional selection: ${match[0]}`);
       const kArr = match[2].split('=');
       const key = kArr[0];
       const val = kArr.length === 2 ? kArr[1] : '';
@@ -224,25 +267,52 @@ class Generator {
       if (mapValue.length) {
         if (!val) {
           // if no evaluation, replace on key found
-          if (match[1].includes('!'))
+          if (match[1].includes('!')) {
+            this._debugLog(`Value found (${match[2]}); conditional FALSE`);
             this._output = this._output.replace(match[0], '');
-          else this._output = this._output.replace(match[0], match[3]);
+          } else {
+            this._debugLog(`Value found (${match[2]}); conditional TRUE`);
+            this._output = this._output.replace(match[0], match[3]);
+          }
         } else {
           if (val === mapValue[0].value) {
-            console.log('in here');
-            if (match[1].includes('!'))
+            if (match[1].includes('!')) {
+              this._debugLog(
+                `Evaluation TRUE (${match[2]} = ${mapValue[0].value}); conditional FALSE`
+              );
               this._output = this._output.replace(match[0], '');
-            else this._output = this._output.replace(match[0], match[3]);
-          } else {
-            if (match[1].includes('!'))
+            } else {
+              this._debugLog(
+                `Evaluation TRUE (${match[2]} = ${mapValue[0].value}); conditional TRUE`
+              );
               this._output = this._output.replace(match[0], match[3]);
-            else this._output = this._output.replace(match[0], '');
+            }
+          } else {
+            if (match[1].includes('!')) {
+              this._debugLog(
+                `Evaluation FALSE (${match[2]} != ${mapValue[0].value}); conditional FALSE`
+              );
+              this._output = this._output.replace(match[0], match[3]);
+            } else {
+              this._debugLog(
+                `Evaluation FALSE (${match[2]} != ${mapValue[0].value}); conditional TRUE`
+              );
+              this._output = this._output.replace(match[0], '');
+            }
           }
         }
       } else if (!mapValue || !mapValue.length) {
-        if (match[1].includes('!'))
+        if (match[1].includes('!')) {
+          this._debugLog(
+            `Value not found (${match[2]}) OR evaluation not resolvable; conditional FALSE`
+          );
           this._output = this._output.replace(match[0], match[3]);
-        else this._output = this._output.replace(match[0], '');
+        } else {
+          this._debugLog(
+            `Value not found (${match[2]}) OR evaluation not resolvable; conditional TRUE`
+          );
+          this._output = this._output.replace(match[0], '');
+        }
       }
     });
   }
@@ -254,10 +324,13 @@ class Generator {
     const pctRegex = /(?<!\`)@compose\((.*?)\)/g;
     const matches = [...this._output.matchAll(pctRegex)];
     matches.forEach((match) => {
+      this._debugLog(`Processing compositional: ${match[0]}`);
       let res = match[1];
       res = res.replaceAll(/[%{}|]/g, '');
       if (this.HasValueMap(res)) {
-        this._output = this._output.replace(match[0], this._getMapValue(res));
+        const sel = this._getMapValue(res);
+        this._debugLog(`Composed value exists (${sel}), resolving selection`);
+        this._output = this._output.replace(match[0], sel);
       }
     });
   }
@@ -270,6 +343,7 @@ class Generator {
     const matches = [...this._output.matchAll(inlineRegex)];
     matches.forEach((match) => {
       if (match[1].includes('|')) {
+        this._debugLog(`Processing inline selection: ${match[0]}`);
         found = true;
         this._output = this._output.replace(
           match[1],
@@ -289,14 +363,21 @@ class Generator {
     const keywordRegex = /(?<!\`)@(.*?)([{%].*?[}%])/g;
     const matches = [...this._output.matchAll(keywordRegex)];
     matches.forEach((match) => {
-      if (match[1].match(/pct[0-9]+/)) return;
-      if (match[1].includes('if:')) return;
-      if (match[1].includes('compose')) return;
+      this._debugLog(`Processing key assignment: ${match[0]}`);
+      if (
+        match[1].match(/pct[0-9]+/) ||
+        match[1].includes('if:') ||
+        match[1].includes('compose')
+      ) {
+        this._debugLog(`Syntax includes reserved characters, abandoning`);
+        return;
+      }
       found = true;
       if (match[2].includes('{')) {
         // inline selection
         const val = this._getInlineValue(match[2]);
         this.Define(match[1], val);
+        this._debugLog(`Defined @${match[1]} as ${val}`);
         this._output = this._output.replace(match[0], '');
       } else {
         // array selection
@@ -304,6 +385,7 @@ class Generator {
         if (this.HasValueMap(vmKey)) {
           const sel = this._getMapValue(vmKey);
           this.Define(match[1], sel);
+          this._debugLog(`Defined @${match[1]} as ${sel}`);
           this._output = this._output.replace(match[0], '');
         }
       }
@@ -320,11 +402,11 @@ class Generator {
     const matches = [...this._output.matchAll(inlineRegex)];
     matches.forEach((match) => {
       if (!match[1].includes('|')) return false;
+      this._debugLog(`Processing inline selection: ${match[0]}`);
       found = true;
-      this._output = this._output.replace(
-        match[0],
-        this._getInlineValue(match[1])
-      );
+      const sel = this._getInlineValue(match[1]);
+      this._debugLog(`Map value found, resolving selection (${sel})`);
+      this._output = this._output.replace(match[0], sel);
     });
 
     return found;
@@ -338,13 +420,13 @@ class Generator {
     const inlineRegex = /(?<!\`)%(.*?)%/g;
     const matches = [...this._output.matchAll(inlineRegex)];
     matches.forEach((match) => {
+      this._debugLog(`Processing selection: ${match[0]}`);
       found = true;
 
       if (this.HasValueMap(match[1])) {
-        this._output = this._output.replace(
-          match[0],
-          this._getMapValue(match[1])
-        );
+        const sel = this._getMapValue(match[1]);
+        this._debugLog(`Map value found, resolving selection (${sel})`);
+        this._output = this._output.replace(match[0], sel);
       }
     });
 
@@ -369,10 +451,14 @@ class Generator {
     const pctRegex = /(?<!\`)@pct(\.?\d*\.?\d*)([{%].*?[}%])/g;
     const matches = [...this._output.matchAll(pctRegex)];
     matches.forEach((match) => {
+      this._debugLog(`Processing @pct conditional: ${match[0]}`);
       found = true;
       if (this.rollPct(match[1])) {
+        this._debugLog(`Roll success (>${match[1]}), keeping selection`);
+
         this._output = this._output.replace(match[0], match[2]);
       } else {
+        this._debugLog(`Roll failure (<${match[1]}), removing selection`);
         this._output = this._output.replace(match[0], '');
       }
     });
@@ -392,10 +478,11 @@ class Generator {
   private endTimer(msg: string) {
     let ms = (new Date().getTime() - this._timer).toString();
     if (ms === '0') ms = '<1';
-    this._log(logLevel.verbose, '⏱️', `${msg} in ${ms}ms`);
+    this._log(logLevel.verbose, `${msg} in ${ms}ms`);
   }
 
   private getBaseTemplate(template: any): string {
+    this._debugLog(`Getting initial template...`);
     if (typeof template === 'string') return template;
     else if (Array.isArray(template)) return _.sample(template);
     else if (!template && this.Library) {
@@ -406,7 +493,6 @@ class Generator {
     else {
       this._log(
         logLevel.error,
-        '🚨',
         'inappropriate or malformed template/template container sent to generator'
       );
       throw new Error(template);
@@ -419,11 +505,7 @@ class Generator {
 
   public Define(key: string, value: string) {
     if (!this.HasValueMap(key)) this.ValueMap.set(key, [{ value, weight: 1 }]);
-    this._log(
-      logLevel.warning,
-      '🔒',
-      `A definition already exists for ${key} (${value})`
-    );
+    this._log(logLevel.warning, `A definition exists for ${key} (${value})`);
   }
 
   public HasValueMap(key: string): boolean {
@@ -459,7 +541,6 @@ class Generator {
       Trim: false,
       CleanMultipleSpaces: false,
       ClearBracketSyntax: false,
-      CapitalizeFirst: false,
       ClearMissingKeys: false,
       MaxIterations: iterations,
       CleanEscapes: false,
@@ -507,7 +588,6 @@ class Generator {
     const cachedOptions = this._options;
     this.SetOptions({
       CleanMultipleSpaces: false,
-      CapitalizeFirst: false,
       ClearMissingKeys: false,
       MaxIterations: 1,
       CleanEscapes: false,
@@ -518,8 +598,13 @@ class Generator {
     return res;
   }
 
-  private _log(level: logLevel, icon: string, msg: string) {
-    if (level <= this._options.Logging) cLog(level, icon, msg);
+  private _log(level: logLevel, msg: string) {
+    if (level <= this._options.Logging) cLog(level, msg);
+  }
+
+  private _debugLog(msg: string) {
+    if (this._options.Logging === logLevel.debug)
+      cLog(logLevel.debug, msg, '👾');
   }
 }
 

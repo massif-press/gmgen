@@ -15,7 +15,7 @@ const interactiveDemo = (
   });
 
   const myGenerator = new Generator(myLibrary, {
-    Logging: 'verbose',
+    Logging: 'debug',
   });
 
   return myGenerator.Generate(template);
