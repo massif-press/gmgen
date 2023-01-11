@@ -20,6 +20,7 @@ declare class GeneratorOptions {
 declare class Generator {
     Library: GeneratorLibrary | undefined;
     ValueMap: Map<string, ValueItem[]>;
+    DefinitionMap: Map<string, string>;
     private _timer;
     private _output;
     private _options;
@@ -38,6 +39,7 @@ declare class Generator {
     private cleanEscapes;
     private innerProcess;
     private outerProcess;
+    private resolveDefinitions;
     private conditionalSelection;
     private compositionalSelection;
     private resolveInlineSelectionSets;
@@ -53,6 +55,7 @@ declare class Generator {
     private getBaseTemplate;
     get Options(): GeneratorOptions;
     Define(key: string, value: string): void;
+    IsDefined(key: string): boolean;
     HasValueMap(key: string): boolean;
     GetValueMap(key: string): ValueItem[];
     SetValueMap(key: string, data: ValueItem[]): void;

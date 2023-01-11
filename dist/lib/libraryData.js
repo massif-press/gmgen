@@ -120,6 +120,8 @@ class LibraryData {
         let v, w;
         if (!values)
             return [];
+        if (Array.isArray(values) && !values[0])
+            return [];
         if (typeof values === 'string')
             values = values.replace(/[{}]/g, '').split('|');
         if (typeof values[0] === 'string') {

@@ -26,6 +26,7 @@ class GeneratorOptions {
 class Generator {
   public Library: GeneratorLibrary | undefined;
   public ValueMap: Map<string, ValueItem[]>;
+  public DefinitionMap: Map<string, string>;
 
   private _timer = 0;
   private _output = '';
@@ -33,6 +34,7 @@ class Generator {
 
   constructor(library?: GeneratorLibrary | null, options?: any) {
     this.ValueMap = new Map<string, ValueItem[]>();
+    this.DefinitionMap = new Map<string, string>();
     if (library) this.LoadLibrary(library);
     if (options) this.SetOptions(options);
   }
@@ -219,40 +221,62 @@ class Generator {
     this._output = this._output.replace(/`/g, '');
   }
 
-  private innerProcess(): boolean {
-    const contFlags = new Array(5).fill(true);
-
+  private innerProcess() {
     let innerLoops = 5;
 
     while (innerLoops > 0) {
+      this.resolveDefinitions();
       // remove @pct misses
-      contFlags[0] = this.resolvePcts();
+      this._output = this.resolvePcts(this._output);
       // assign keywords
-      contFlags[1] = this.assignKeys();
+      this._output = this.assignKeys(this._output);
       // remove inline selection sets misses
-      contFlags[2] = this.resolveInlineSelectionSets();
+      this._output = this.resolveInlineSelectionSets(this._output);
       // resolve inline selections
-      contFlags[3] = this.resolveInline();
+      this._output = this.resolveInline(this._output);
       // do other selections
-      contFlags[4] = this.resolveSets();
+      this._output = this.resolveSets(this._output);
 
       innerLoops--;
     }
-
-    return contFlags.includes(true);
   }
 
   private outerProcess() {
-    this.conditionalSelection();
-    this.compositionalSelection();
+    this._output = this.conditionalSelection(this._output);
+    this._output = this.compositionalSelection(this._output);
   }
 
-  private conditionalSelection() {
+  private resolveDefinitions() {
+    //go through definitions and attempt to resolve into valuemap
+    const pctRegex = /(?<!`)[%|{|@]/g;
+    for (const [k, v] of this.DefinitionMap.entries()) {
+      console.log(k, v);
+      //if they have no unescaped reserved characters, add to valuemap
+      if (!pctRegex.test(v)) {
+        this.AddValueMap(k, [{ value: v, weight: 1 }]);
+        this.DefinitionMap.delete(k);
+      } else {
+        //if they have reserved characters, attempt to resolve
+        let resV = v;
+        resV = this.resolvePcts(resV);
+        resV = this.assignKeys(resV);
+        resV = this.resolveInlineSelectionSets(resV);
+        resV = this.resolveInline(resV);
+        resV = this.resolveSets(resV);
+        resV = this.conditionalSelection(resV);
+        resV = this.compositionalSelection(resV);
+        this.DefinitionMap.set(k, resV);
+      }
+    }
+  }
+
+  private conditionalSelection(input: string): string {
+    let result = input;
     // find all @if and @!if
     // group 0 is full match, group 1 is if/!if, group 2 is key OR key=val, group 3 is content including syntactical elements
     // backtick escapes
     const pctRegex = /(?<!\`)@(!if|if):(\S*)([{%].*?[}%])/g;
-    const matches = [...this._output.matchAll(pctRegex)];
+    const matches = [...input.matchAll(pctRegex)];
     if (matches.length) {
       this._debugLog(
         `Found ${matches.length} conditional selections, processing...`
@@ -269,10 +293,10 @@ class Generator {
           // if no evaluation, replace on key found
           if (match[1].includes('!')) {
             this._debugLog(`Value found (${match[2]}); conditional FALSE`);
-            this._output = this._output.replace(match[0], '');
+            result = result.replace(match[0], '');
           } else {
             this._debugLog(`Value found (${match[2]}); conditional TRUE`);
-            this._output = this._output.replace(match[0], match[3]);
+            result = result.replace(match[0], match[3]);
           }
         } else {
           if (val === mapValue[0].value) {
@@ -280,24 +304,24 @@ class Generator {
               this._debugLog(
                 `Evaluation TRUE (${match[2]} = ${mapValue[0].value}); conditional FALSE`
               );
-              this._output = this._output.replace(match[0], '');
+              result = result.replace(match[0], '');
             } else {
               this._debugLog(
                 `Evaluation TRUE (${match[2]} = ${mapValue[0].value}); conditional TRUE`
               );
-              this._output = this._output.replace(match[0], match[3]);
+              result = result.replace(match[0], match[3]);
             }
           } else {
             if (match[1].includes('!')) {
               this._debugLog(
                 `Evaluation FALSE (${match[2]} != ${mapValue[0].value}); conditional FALSE`
               );
-              this._output = this._output.replace(match[0], match[3]);
+              result = result.replace(match[0], match[3]);
             } else {
               this._debugLog(
                 `Evaluation FALSE (${match[2]} != ${mapValue[0].value}); conditional TRUE`
               );
-              this._output = this._output.replace(match[0], '');
+              result = result.replace(match[0], '');
             }
           }
         }
@@ -306,23 +330,25 @@ class Generator {
           this._debugLog(
             `Value not found (${match[2]}) OR evaluation not resolvable; conditional FALSE`
           );
-          this._output = this._output.replace(match[0], match[3]);
+          result = result.replace(match[0], match[3]);
         } else {
           this._debugLog(
             `Value not found (${match[2]}) OR evaluation not resolvable; conditional TRUE`
           );
-          this._output = this._output.replace(match[0], '');
+          result = result.replace(match[0], '');
         }
       }
     });
+    return result;
   }
 
-  private compositionalSelection() {
+  private compositionalSelection(input: string) {
+    let result = input;
     // find all @compose
     // group 0 is full match, group 1 is inner value not including syntactical elements
     // backtick escapes
     const pctRegex = /(?<!\`)@compose\((.*?)\)/g;
-    const matches = [...this._output.matchAll(pctRegex)];
+    const matches = [...input.matchAll(pctRegex)];
     matches.forEach((match) => {
       this._debugLog(`Processing compositional: ${match[0]}`);
       let res = match[1];
@@ -330,38 +356,35 @@ class Generator {
       if (this.HasValueMap(res)) {
         const sel = this._getMapValue(res);
         this._debugLog(`Composed value exists (${sel}), resolving selection`);
-        this._output = this._output.replace(match[0], sel);
+        result = result.replace(match[0], sel);
       }
     });
+    return result;
   }
 
-  private resolveInlineSelectionSets() {
-    let found = false;
+  private resolveInlineSelectionSets(input: string): string {
+    let result = input;
     // collapse all inline sets of sets %like|this%
     // group 0 is full match, group 1 is content, not including syntactical elements
     const inlineRegex = /(?<!\`)%(.*?.)%/g;
-    const matches = [...this._output.matchAll(inlineRegex)];
+    const matches = [...input.matchAll(inlineRegex)];
     matches.forEach((match) => {
       if (match[1].includes('|')) {
         this._debugLog(`Processing inline selection: ${match[0]}`);
-        found = true;
-        this._output = this._output.replace(
-          match[1],
-          this._getInlineValue(match[1])
-        );
+        result = result.replace(match[1], this._getInlineValue(match[1]));
       }
     });
 
-    return found;
+    return result;
   }
 
-  private assignKeys(): boolean {
-    let found = false;
+  private assignKeys(input: string): string {
+    let result = input;
     // find all @key
     // group 0 is full match, group 1 is key, group 2 is content, including syntactical elements
     // backtick escapes
     const keywordRegex = /(?<!\`)@(.*?)([{%].*?[}%])/g;
-    const matches = [...this._output.matchAll(keywordRegex)];
+    const matches = [...input.matchAll(keywordRegex)];
     matches.forEach((match) => {
       this._debugLog(`Processing key assignment: ${match[0]}`);
       if (
@@ -372,13 +395,12 @@ class Generator {
         this._debugLog(`Syntax includes reserved characters, abandoning`);
         return;
       }
-      found = true;
       if (match[2].includes('{')) {
         // inline selection
         const val = this._getInlineValue(match[2]);
         this.Define(match[1], val);
         this._debugLog(`Defined @${match[1]} as ${val}`);
-        this._output = this._output.replace(match[0], '');
+        result = result.replace(match[0], '');
       } else {
         // array selection
         const vmKey = match[2].split('%').join('');
@@ -386,51 +408,49 @@ class Generator {
           const sel = this._getMapValue(vmKey);
           this.Define(match[1], sel);
           this._debugLog(`Defined @${match[1]} as ${sel}`);
-          this._output = this._output.replace(match[0], '');
+          result = result.replace(match[0], '');
         }
       }
     });
-    return found;
+    return result;
   }
 
-  private resolveInline(): boolean {
-    let found = false;
+  private resolveInline(input: string): string {
+    let result = input;
     // find all {inline|selections}
     // group 0 is full match, group 1 is content, not including syntactical elements
     // backtick escapes
     const inlineRegex = /(?<!\`){(.*?)}/g;
-    const matches = [...this._output.matchAll(inlineRegex)];
+    const matches = [...input.matchAll(inlineRegex)];
     matches.forEach((match) => {
-      if (!match[1].includes('|')) return false;
+      if (!match[1].includes('|')) return;
       this._debugLog(`Processing inline selection: ${match[0]}`);
-      found = true;
       const sel = this._getInlineValue(match[1]);
       this._debugLog(`Map value found, resolving selection (${sel})`);
-      this._output = this._output.replace(match[0], sel);
+      result = result.replace(match[0], sel);
     });
 
-    return found;
+    return result;
   }
 
-  private resolveSets(): boolean {
-    let found = false;
+  private resolveSets(input: string): string {
+    let result = input;
     // find all %sets%
     // group 0 is full match, group 1 is content, not including syntactical elements
     // backtick escapes
     const inlineRegex = /(?<!\`)%(.*?)%/g;
-    const matches = [...this._output.matchAll(inlineRegex)];
+    const matches = [...input.matchAll(inlineRegex)];
     matches.forEach((match) => {
       this._debugLog(`Processing selection: ${match[0]}`);
-      found = true;
 
       if (this.HasValueMap(match[1])) {
         const sel = this._getMapValue(match[1]);
         this._debugLog(`Map value found, resolving selection (${sel})`);
-        this._output = this._output.replace(match[0], sel);
+        result = result.replace(match[0], sel);
       }
     });
 
-    return found;
+    return result;
   }
 
   private _getInlineValue(inlineStr: string): string {
@@ -443,26 +463,25 @@ class Generator {
     return (WeightedSelection(selArr) as ValueItem).value;
   }
 
-  private resolvePcts(): boolean {
-    let found = false;
+  private resolvePcts(input: string): string {
+    let result = input;
     // find all @pctN{x} and @pctN%x%
     // group 0 is full match, group 1 is pct, group 2 is content, including syntactical elements
     // backtick escapes
     const pctRegex = /(?<!\`)@pct(\.?\d*\.?\d*)([{%].*?[}%])/g;
-    const matches = [...this._output.matchAll(pctRegex)];
+    const matches = [...input.matchAll(pctRegex)];
     matches.forEach((match) => {
       this._debugLog(`Processing @pct conditional: ${match[0]}`);
-      found = true;
       if (this.rollPct(match[1])) {
         this._debugLog(`Roll success (>${match[1]}), keeping selection`);
 
-        this._output = this._output.replace(match[0], match[2]);
+        result = result.replace(match[0], match[2]);
       } else {
         this._debugLog(`Roll failure (<${match[1]}), removing selection`);
-        this._output = this._output.replace(match[0], '');
+        result = result.replace(match[0], '');
       }
     });
-    return found;
+    return result;
   }
 
   private rollPct(p: string): boolean {
@@ -504,8 +523,12 @@ class Generator {
   }
 
   public Define(key: string, value: string) {
-    if (!this.HasValueMap(key)) this.ValueMap.set(key, [{ value, weight: 1 }]);
+    if (!this.HasValueMap(key)) this.DefinitionMap.set(key, value);
     this._log(logLevel.warning, `A definition exists for ${key} (${value})`);
+  }
+
+  public IsDefined(key: string) {
+    return this.DefinitionMap.has(key);
   }
 
   public HasValueMap(key: string): boolean {

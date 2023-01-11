@@ -1,5 +1,8 @@
 {
   "key": "kobolds",
+  "definitions": {
+    "name": "%names%"
+  },
   "values": {
     "names": [
       "Arx ",
@@ -53,6 +56,6 @@
     "classes": ["warrior", "thief", "ranger", "shaman"]
   },
   "templates": [
-    "<div class='text-3xl'> @name%names% ^%name%^ @pct15%suffix% </div><div class='text-xl'> Kobold @class%classes% ^%class%^ </div><br><div class='text-xl'> Description </div><p class='p-1'>%description%</p><div class='text-xl'> Inventory </div><p class='p-1'>%inventory%</p>"
+    "<div class='text-3xl'> ^%name%^ @pct15%suffix% </div><div class='text-xl'> Kobold @class%classes% ^%class%^ </div><br><div class='text-xl'> Description </div><p class='p-1'>%description%</p><div class='text-xl'> Inventory </div><p class='p-1'>%inventory%</p>"
   ]
 }
