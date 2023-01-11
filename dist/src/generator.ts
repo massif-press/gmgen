@@ -250,7 +250,6 @@ class Generator {
     //go through definitions and attempt to resolve into valuemap
     const pctRegex = /(?<!`)[%|{|@]/g;
     for (const [k, v] of this.DefinitionMap.entries()) {
-      console.log(k, v);
       //if they have no unescaped reserved characters, add to valuemap
       if (!pctRegex.test(v)) {
         this.AddValueMap(k, [{ value: v, weight: 1 }]);
@@ -523,7 +522,7 @@ class Generator {
   }
 
   public Define(key: string, value: string) {
-    if (!this.HasValueMap(key)) this.DefinitionMap.set(key, value);
+    if (!this.IsDefined(key)) this.DefinitionMap.set(key, value);
     this._log(logLevel.warning, `A definition exists for ${key} (${value})`);
   }
 

@@ -2,7 +2,6 @@
   "key": "description",
   "values": {
     "location": "forests|wood|marshes|canyons|plateaus|swamps|caverns|caves|plains|glades|inlets|badlands|deserts",
-    "empty": [],
     "placename": [
       "Xoscoeca",
       "Gestington",
