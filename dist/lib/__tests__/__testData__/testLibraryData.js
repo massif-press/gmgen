@@ -18,6 +18,7 @@ const testData = {
         def_b: 'b',
     },
     values: {
+        empty_set: [],
         string_val: 'solo string val',
         inline_sel: '{inline1|inline2|inline3}',
         weighted_inline_sel: '{inline4:1|inline5:6|inline6:10|inline7}',

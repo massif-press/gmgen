@@ -118,6 +118,8 @@ class LibraryData {
     }
     static PrepValues(values, weights) {
         let v, w;
+        if (!values)
+            return [];
         if (typeof values === 'string')
             values = values.replace(/[{}]/g, '').split('|');
         if (typeof values[0] === 'string') {

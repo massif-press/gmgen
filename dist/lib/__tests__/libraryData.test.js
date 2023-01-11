@@ -54,6 +54,9 @@ describe('Convert', () => {
     it('should preserve all keyed values', () => {
         expect(ld.values).to.include.keys('string_val', 'weighted_arr_sel');
     });
+    it('should return an empty set for empty values', () => {
+        expect(ld.values['empty_set'][0]).to.have.property('value').that.equals('');
+    });
     it('should preserve ValueItem values', () => {
         expect(ld.values['string_val'][0])
             .to.have.property('value')

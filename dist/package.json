@@ -1,6 +1,6 @@
 {
   "name": "gmgen",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A text-replacement engine with some extra features, meant for use in and around TTRPGs",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

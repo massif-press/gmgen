@@ -162,6 +162,8 @@ class LibraryData {
   ): ValueItem[] {
     let v, w: number[];
 
+    if (!values) return [];
+
     if (typeof values === 'string')
       values = values.replace(/[{}]/g, '').split('|');
 

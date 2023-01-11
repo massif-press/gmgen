@@ -14,6 +14,7 @@ declare const testData: {
         def_b: string;
     };
     values: {
+        empty_set: never[];
         string_val: string;
         inline_sel: string;
         weighted_inline_sel: string;
