@@ -19,6 +19,7 @@ type GeneratorOptions = {
 declare class Generator {
     ValueMap: Map<string, ValueItem[]>;
     DefinitionMap: Map<string, string>;
+    private _baseTemplates;
     private _timer;
     private _output;
     private _options;

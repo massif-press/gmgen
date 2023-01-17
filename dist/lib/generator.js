@@ -27,6 +27,7 @@ class Generator {
         this._options = defaultGeneratorOptions();
         this.ValueMap = new Map();
         this.DefinitionMap = new Map();
+        this._baseTemplates = [];
         if (options)
             this.SetOptions(options);
     }
@@ -50,6 +51,9 @@ class Generator {
             }
             if (e.templates) {
                 this._debugLog(`Processing library templates`);
+                if (!this._baseTemplates.length) {
+                    this._baseTemplates = [...e.templates];
+                }
                 e.templates.forEach((value) => {
                     this.AddValueMap(e.key, [{ value, weight: 1 }]);
                 });
@@ -445,6 +449,9 @@ class Generator {
             return template;
         else if (Array.isArray(template))
             return lodash_1.default.sample(template);
+        else if (!template && this._baseTemplates.length) {
+            return lodash_1.default.sample(this._baseTemplates);
+        }
         else if (template.templates)
             return this.getBaseTemplate(template.templates);
         else {

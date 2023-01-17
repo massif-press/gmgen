@@ -9,7 +9,7 @@ const basicDemo = (): string => {
   // Check the Console to see detailed Generator logs
   myGenerator.SetOption('Logging', gmgen.logLevel.debug);
 
-  return myGenerator.Generate();
+  return myGenerator.Generate(data);
 };
 
 export default basicDemo;
