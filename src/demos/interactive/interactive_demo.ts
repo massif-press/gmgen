@@ -4,15 +4,13 @@ const interactiveDemo = (
   data: { value: string; weight: number }[],
   template: string
 ): string => {
-  const myLibrary = new gmgen.GeneratorLibrary();
-  myLibrary.AddData({
+  const myGenerator = new gmgen.Generator();
+  myGenerator.AddData({
     key: 'newLibrary',
     values: {
       treasure: data,
     },
   });
-
-  const myGenerator = new gmgen.Generator(myLibrary);
 
   // Check the Console to see detailed Generator logs
   myGenerator.SetOption('Logging', gmgen.logLevel.debug);

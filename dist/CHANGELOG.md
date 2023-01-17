@@ -1,3 +1,7 @@
+## 1.1.1 (2023-01-17)
+
+- Fixed a missing template assignment
+
 ## 1.1.0 (2023-01-17)
 
 - Pulled library initialization procedures into Generator class

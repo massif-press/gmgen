@@ -40,6 +40,7 @@ class Generator {
   public ValueMap: Map<string, ValueItem[]>;
   public DefinitionMap: Map<string, string>;
 
+  private _baseTemplates: string[];
   private _timer = 0;
   private _output = '';
   private _options = defaultGeneratorOptions();
@@ -47,6 +48,7 @@ class Generator {
   constructor(options?: any) {
     this.ValueMap = new Map<string, ValueItem[]>();
     this.DefinitionMap = new Map<string, string>();
+    this._baseTemplates = [];
     if (options) this.SetOptions(options);
   }
 
@@ -77,6 +79,10 @@ class Generator {
       }
       if (e.templates) {
         this._debugLog(`Processing library templates`);
+
+        if (!this._baseTemplates.length) {
+          this._baseTemplates = [...e.templates];
+        }
 
         e.templates.forEach((value) => {
           this.AddValueMap(e.key, [{ value, weight: 1 }]);
@@ -535,7 +541,9 @@ class Generator {
     this._debugLog(`Getting initial template...`);
     if (typeof template === 'string') return template;
     else if (Array.isArray(template)) return _.sample(template);
-    else if (template.templates)
+    else if (!template && this._baseTemplates.length) {
+      return _.sample(this._baseTemplates) as string;
+    } else if (template.templates)
       return this.getBaseTemplate(template.templates);
     else {
       this._log(

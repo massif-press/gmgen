@@ -493,9 +493,9 @@
     "is-glob" "^4.0.3"
 
 "gmgen@^1.0.2":
-  "integrity" "sha512-Eh4ZHISg/ECfHGbgJJZVJUYkWgWIZn0HoJpLSblz8j4YcnSbtSgLCGK+t2IvYQYZ1PNsgJ6gnar1MSl0cOsxtw=="
-  "resolved" "https://registry.npmjs.org/gmgen/-/gmgen-1.0.2.tgz"
-  "version" "1.0.2"
+  "integrity" "sha512-XigLWiFVdCNy7qXKMjyknxd8ZARfumSh3Wmqd0nOeXXHgPAmJ7JlNGLxOa+EGVMYJk1bYcmzHRzaK4LkPzHfRg=="
+  "resolved" "https://registry.npmjs.org/gmgen/-/gmgen-1.1.0.tgz"
+  "version" "1.1.0"
   dependencies:
     "lodash" "^4.17.21"
 

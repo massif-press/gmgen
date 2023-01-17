@@ -3,9 +3,8 @@ import * as gmgen from 'gmgen';
 import * as data from './data';
 
 const dynamicDemo = (size: number, temp: number, atmos: number): string => {
-  const myLibrary = new gmgen.GeneratorLibrary(data);
-
-  const myGenerator = new gmgen.Generator(myLibrary);
+  const myGenerator = new gmgen.Generator();
+  myGenerator.AddData(data);
 
   // Check the Console to see detailed Generator logs
   myGenerator.SetOption('Logging', gmgen.logLevel.debug);

@@ -3,13 +3,12 @@ import * as gmgen from 'gmgen';
 import * as data from './data';
 
 const advancedDemo = (): string => {
-  const weaponLibrary = new gmgen.GeneratorLibrary(data);
-  const myGenerator = new gmgen.Generator(weaponLibrary, {
-    Logging: 'verbose',
+  const myGenerator = new gmgen.Generator({
+    // Check the Console to see detailed Generator logs
+    Logging: gmgen.logLevel.debug,
   });
 
-  // Check the Console to see detailed Generator logs
-  myGenerator.SetOption('Logging', gmgen.logLevel.debug);
+  myGenerator.AddData(data);
 
   return myGenerator.Generate(data.itemTemplate);
 };
