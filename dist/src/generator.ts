@@ -12,38 +12,49 @@ type ValueItem = {
   weight: number;
 };
 
-class GeneratorOptions {
-  Trim: boolean = true;
-  CleanMultipleSpaces: boolean = true;
-  ClearMissingKeys: boolean = true;
-  CleanEscapes: boolean = true;
-  ClearBracketSyntax: boolean = true;
-  MaxIterations: number = 100;
-  PreventEarlyExit: boolean = false;
-  Logging: logLevel = logLevel.error;
-}
+type GeneratorOptions = {
+  Trim: boolean;
+  CleanMultipleSpaces: boolean;
+  ClearMissingKeys: boolean;
+  CleanEscapes: boolean;
+  ClearBracketSyntax: boolean;
+  MaxIterations: number;
+  PreventEarlyExit: boolean;
+  Logging: logLevel;
+};
+
+const defaultGeneratorOptions = (): GeneratorOptions => {
+  return {
+    Trim: true,
+    CleanMultipleSpaces: true,
+    ClearMissingKeys: true,
+    CleanEscapes: true,
+    ClearBracketSyntax: true,
+    MaxIterations: 100,
+    PreventEarlyExit: false,
+    Logging: logLevel.error,
+  };
+};
 
 class Generator {
-  public Library: GeneratorLibrary | undefined;
   public ValueMap: Map<string, ValueItem[]>;
   public DefinitionMap: Map<string, string>;
 
   private _timer = 0;
   private _output = '';
-  private _options = new GeneratorOptions();
+  private _options = defaultGeneratorOptions();
 
-  constructor(library?: GeneratorLibrary | null, options?: any) {
+  constructor(options?: any) {
     this.ValueMap = new Map<string, ValueItem[]>();
     this.DefinitionMap = new Map<string, string>();
-    if (library) this.LoadLibrary(library);
     if (options) this.SetOptions(options);
   }
 
-  public LoadLibrary(library: GeneratorLibrary) {
-    this._debugLog('Loading Library');
+  public AddData(data: any) {
+    this._debugLog('Loading Data');
     this.startTimer();
 
-    this.Library = library;
+    const library = new GeneratorLibrary(data);
 
     library.Content.forEach((e: LibraryData, i: Number) => {
       this._debugLog(
@@ -78,11 +89,15 @@ class Generator {
 
   public SetOptions(options: GeneratorOptions) {
     for (const key in this._options) {
-      if (key in options) this.SetOption(key, options[key]);
+      if (key in options)
+        this.SetOption(key as keyof GeneratorOptions, options[key]);
     }
   }
 
-  public SetOption(key: string, value: string | number | boolean) {
+  public SetOption<K extends keyof GeneratorOptions>(
+    key: K,
+    value: GeneratorOptions[K]
+  ) {
     this._options[key] = value;
   }
 
@@ -225,6 +240,9 @@ class Generator {
     let innerLoops = 5;
 
     while (innerLoops > 0) {
+      // expand repeats
+      this._output = this.resolveRepeats(this._output);
+      // set explicit definitions
       this.resolveDefinitions();
       // remove @pct misses
       this._output = this.resolvePcts(this._output);
@@ -244,6 +262,20 @@ class Generator {
   private outerProcess() {
     this._output = this.conditionalSelection(this._output);
     this._output = this.compositionalSelection(this._output);
+  }
+
+  private resolveRepeats(input: string): string {
+    let result = input;
+    // find all @compose
+    // group 0 is full match, group 1 is repeat, group 2 is content
+    // backtick escapes
+    const pctRegex = /(?<!\`)@repeat:(\d*)\((.*?)\)/g;
+    const matches = [...input.matchAll(pctRegex)];
+    matches.forEach((match) => {
+      this._debugLog(`Processing repeat: ${match[0]}`);
+      result = result.replace(match[0], match[2].repeat(Number(match[1])));
+    });
+    return result;
   }
 
   private resolveDefinitions() {
@@ -346,8 +378,8 @@ class Generator {
     // find all @compose
     // group 0 is full match, group 1 is inner value not including syntactical elements
     // backtick escapes
-    const pctRegex = /(?<!\`)@compose\((.*?)\)/g;
-    const matches = [...input.matchAll(pctRegex)];
+    const composeRegex = /(?<!\`)@compose\((.*?)\)/g;
+    const matches = [...input.matchAll(composeRegex)];
     matches.forEach((match) => {
       this._debugLog(`Processing compositional: ${match[0]}`);
       let res = match[1];
@@ -503,10 +535,7 @@ class Generator {
     this._debugLog(`Getting initial template...`);
     if (typeof template === 'string') return template;
     else if (Array.isArray(template)) return _.sample(template);
-    else if (!template && this.Library) {
-      template = _.sample(this.Library.Content) as templateItem;
-      return _.sample(template.templates);
-    } else if (template.templates)
+    else if (template.templates)
       return this.getBaseTemplate(template.templates);
     else {
       this._log(
@@ -580,10 +609,12 @@ class Generator {
     return out;
   }
 
-  public OverlappingDefinitions(): string[] {
+  public OverlappingDefinitions(data: any): string[] {
     let defs: string[] = [];
 
-    this.Library?.Content.map((data: LibraryData) => {
+    const library = new GeneratorLibrary(data);
+
+    library.Content.map((data: LibraryData) => {
       defs = [...defs, ...Object.keys(data.definitions)];
     });
     const out: string[] = [];

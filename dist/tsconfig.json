@@ -7,9 +7,8 @@
     "suppressImplicitAnyIndexErrors": true,
     "outDir": "./lib",
     "strict": true,
-    "types": ["jest", "node", "@testing-library/jest-dom"]
+    "types": ["node"]
   },
-  "files": ["global.d.ts"],
-  "include": ["src", "jest-setup.ts"],
+  "include": ["src"],
   "exclude": ["node_modules"]
 }

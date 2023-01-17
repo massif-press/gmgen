@@ -5,36 +5,35 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Generator = void 0;
 const lodash_1 = __importDefault(require("lodash"));
+const generatorLibrary_1 = __importDefault(require("./generatorLibrary"));
 const libraryData_1 = __importDefault(require("./libraryData"));
 const util_1 = require("./util");
-class GeneratorOptions {
-    constructor() {
-        this.Trim = true;
-        this.CleanMultipleSpaces = true;
-        this.ClearMissingKeys = true;
-        this.CleanEscapes = true;
-        this.ClearBracketSyntax = true;
-        this.MaxIterations = 100;
-        this.PreventEarlyExit = false;
-        this.Logging = util_1.logLevel.error;
-    }
-}
+const defaultGeneratorOptions = () => {
+    return {
+        Trim: true,
+        CleanMultipleSpaces: true,
+        ClearMissingKeys: true,
+        CleanEscapes: true,
+        ClearBracketSyntax: true,
+        MaxIterations: 100,
+        PreventEarlyExit: false,
+        Logging: util_1.logLevel.error,
+    };
+};
 class Generator {
-    constructor(library, options) {
+    constructor(options) {
         this._timer = 0;
         this._output = '';
-        this._options = new GeneratorOptions();
+        this._options = defaultGeneratorOptions();
         this.ValueMap = new Map();
         this.DefinitionMap = new Map();
-        if (library)
-            this.LoadLibrary(library);
         if (options)
             this.SetOptions(options);
     }
-    LoadLibrary(library) {
-        this._debugLog('Loading Library');
+    AddData(data) {
+        this._debugLog('Loading Data');
         this.startTimer();
-        this.Library = library;
+        const library = new generatorLibrary_1.default(data);
         library.Content.forEach((e, i) => {
             this._debugLog(`Processing library content (${i} of ${library.Content.length})`);
             if (e.definitions) {
@@ -175,6 +174,9 @@ class Generator {
     innerProcess() {
         let innerLoops = 5;
         while (innerLoops > 0) {
+            // expand repeats
+            this._output = this.resolveRepeats(this._output);
+            // set explicit definitions
             this.resolveDefinitions();
             // remove @pct misses
             this._output = this.resolvePcts(this._output);
@@ -193,11 +195,23 @@ class Generator {
         this._output = this.conditionalSelection(this._output);
         this._output = this.compositionalSelection(this._output);
     }
+    resolveRepeats(input) {
+        let result = input;
+        // find all @compose
+        // group 0 is full match, group 1 is repeat, group 2 is content
+        // backtick escapes
+        const pctRegex = /(?<!\`)@repeat:(\d*)\((.*?)\)/g;
+        const matches = [...input.matchAll(pctRegex)];
+        matches.forEach((match) => {
+            this._debugLog(`Processing repeat: ${match[0]}`);
+            result = result.replace(match[0], match[2].repeat(Number(match[1])));
+        });
+        return result;
+    }
     resolveDefinitions() {
         //go through definitions and attempt to resolve into valuemap
         const pctRegex = /(?<!`)[%|{|@]/g;
         for (const [k, v] of this.DefinitionMap.entries()) {
-            console.log(k, v);
             //if they have no unescaped reserved characters, add to valuemap
             if (!pctRegex.test(v)) {
                 this.AddValueMap(k, [{ value: v, weight: 1 }]);
@@ -286,8 +300,8 @@ class Generator {
         // find all @compose
         // group 0 is full match, group 1 is inner value not including syntactical elements
         // backtick escapes
-        const pctRegex = /(?<!\`)@compose\((.*?)\)/g;
-        const matches = [...input.matchAll(pctRegex)];
+        const composeRegex = /(?<!\`)@compose\((.*?)\)/g;
+        const matches = [...input.matchAll(composeRegex)];
         matches.forEach((match) => {
             this._debugLog(`Processing compositional: ${match[0]}`);
             let res = match[1];
@@ -431,10 +445,6 @@ class Generator {
             return template;
         else if (Array.isArray(template))
             return lodash_1.default.sample(template);
-        else if (!template && this.Library) {
-            template = lodash_1.default.sample(this.Library.Content);
-            return lodash_1.default.sample(template.templates);
-        }
         else if (template.templates)
             return this.getBaseTemplate(template.templates);
         else {
@@ -446,7 +456,7 @@ class Generator {
         return this._options;
     }
     Define(key, value) {
-        if (!this.HasValueMap(key))
+        if (!this.IsDefined(key))
             this.DefinitionMap.set(key, value);
         this._log(util_1.logLevel.warning, `A definition exists for ${key} (${value})`);
     }
@@ -495,9 +505,10 @@ class Generator {
         this.SetOptions(cachedOptions);
         return out;
     }
-    OverlappingDefinitions() {
+    OverlappingDefinitions(data) {
         let defs = [];
-        this.Library?.Content.map((data) => {
+        const library = new generatorLibrary_1.default(data);
+        library.Content.map((data) => {
             defs = [...defs, ...Object.keys(data.definitions)];
         });
         const out = [];

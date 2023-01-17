@@ -11,15 +11,15 @@ class GeneratorLibrary {
         if (libraryData) {
             if (Array.isArray(libraryData)) {
                 libraryData.map((x) => {
-                    this.AddData(x);
+                    this.addData(x);
                 });
             }
             else if (libraryData.key) {
-                this.AddData(libraryData);
+                this.addData(libraryData);
             }
             else if (libraryData[Object.keys(libraryData)[0]].key) {
                 for (const key in libraryData) {
-                    this.AddData(libraryData[key]);
+                    this.addData(libraryData[key]);
                 }
             }
         }
@@ -27,35 +27,25 @@ class GeneratorLibrary {
     get Content() {
         return this._content;
     }
-    HasLibrary(key) {
+    hasLibrary(key) {
         const k = this.getKeyStr(key);
         if (k)
             return this.contentIndex(k) > -1;
         (0, util_1.cLog)(1, 'Bad parameter passed to Library.HasLibrary', '📙');
         throw new Error(`${key} is not string or LibraryData`);
     }
-    GetLibrary(key) {
-        const k = this.getKeyStr(key);
-        this.checkExists(k);
-        return this._content[this.contentIndex(k)];
-    }
-    AddData(data) {
+    addData(data) {
         if (!data.key) {
             (0, util_1.cLog)(1, 'Item passed to Library has no key', '📙');
             throw new Error(`${data} does not include key field`);
         }
-        if (this.HasLibrary(data))
+        if (this.hasLibrary(data))
             this.mergeData(data);
         else
-            this.SetData(data);
+            this.setData(data);
     }
-    SetData(data) {
+    setData(data) {
         this._content.push(libraryData_1.default.Convert(data));
-    }
-    DeleteData(key) {
-        const k = this.getKeyStr(key);
-        this.checkExists(k);
-        this._content.splice(this.contentIndex(k), 1);
     }
     contentIndex(k) {
         return this._content.findIndex((x) => x.key === k);
@@ -70,12 +60,6 @@ class GeneratorLibrary {
     }
     getKeyStr(key) {
         return typeof key === 'string' ? key : key.key;
-    }
-    checkExists(key) {
-        if (!this.HasLibrary(key)) {
-            (0, util_1.cLog)(1, 'Error deleting LibraryData: LibraryData of key ${key} not found in library', '📙');
-            throw new Error(`${key} not found`);
-        }
     }
 }
 exports.default = GeneratorLibrary;

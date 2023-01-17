@@ -54,84 +54,41 @@ Additionally, it'll be generalized into a standalone package for development of 
 
 The goal is for this to be smarter and more flexible than a markov generator or ad-lib engine, without falling down the simulation rabbit hole.
 
-# How it works
-
-gmgen is essentially a text-replacement engine with some extra features. You define json arrays and objects with string data, and gmgen replaces bits of them with other bits. It's ad-lib templates that can be conditionally filled with other templates, or regular words, or keywords that are picked once and never change.
-
-It seems complicated (and I've written a lot of words here) but was built to be pretty easy, straightforward, and organizable in practice. You can check the `/src/data` folder for a complicated Lancer example, but the generic module version of this project will have a much simpler example (or, probably, a small set of examples)
-
-# Demos
+## Demos
 
 Several demos and code examples can be found at https://gmgen.netlify.app/
 
 # Usage
 
-Broadly, gmgen consists of Libraries (which contain the raw data used in generating things), and Generators (the things doing the generation). You fill Libraries with information a Generator can pick from, and how to pick it, and the Generator looks through all of that information and those instructions and spits out something based on the data it finds.
+gmgen is essentially a text-replacement engine with some extra features. You define json arrays and objects with string data, and gmgen replaces bits of them with other bits. It's ad-lib templates that can be conditionally filled with other templates, or regular words, or keywords that are picked once and never change.
+
+It seems complicated (and I've written a lot of words here) but was built to be pretty easy, straightforward, and organizable in practice. You can check the `/src/data` folder for a complicated Lancer example, but the generic module version of this project will have a much simpler example (or, probably, a small set of examples)
 
 ## Setup
 
 To start, create a new Generator:
 
 ```ts
-const myGenerator = new Generator();
+const myGenerator = new Generator(options?: GeneratorOptions);
 ```
 
-To use the generator, we need to provide this generator an object hierarchy of data that the generator will pull from to construct output. You can do this directly, or with structured data organized into Libraries. The direct method is best used when you're dealing with small dynamic or user-generated data, and libraries are intended for large static or semi-static data. We'll start with the library method, as the direct functions can be used alongside library loading.
+To use the generator, we need to provide it a hierarchy of data that it can use to pull from to construct output. With large sets of static data, this is best done by adding JSON-formatted strings or pre-parsed data objects as defined in [Data Structure](#data-structure). These objects have a key value and sets of definitions, values, and templates. gmgen will add (or append to existing value sets) the data contained in these objects.
 
-### Library Method
+The values in the generator can also be modified directly by calling the following functions that collections of key-value pairs that represent substitutions for specific strings that appear in templates or other data.
 
 ```ts
-const myLibrary = new Library();
+  AddData(data: string | object) // add structured JSON data to the generator
+
+  Define(key: string, value: ValueInput) // define a key as a specific, read-only value
+  IsDefined(key: string): boolean // check if a key has a definition
+
+  AddValue(key: string, value: ValueInput) // add new values, or merge values at an already-existing key
+  SetValue(key: string, value: ValueInput) // add new values, or overwrite values at an already-existing key
+  GetValue(key: string): {key: string, weight: number}  // return an object of values (and their weights) at key. Returns null if the key is not defined
+  HasValue(key: string): boolean // returns a true if any values exist at key, false if there aren't any, and an error if the key is not defined
 ```
 
-A [Library](#library) contains one or more [LibraryData](#librarydata). These data can be imported as [static JSON objects](#data-structure) or can be [programmatically generated](#dynamic-generation). Take a look at [Example JSON](#example-json) or [these demos](https://gmgen.netlify.app/) to get started with building Libraries.
-
-Multiple LibraryData can be added to a Library, to allow for deep and complex and/or dynamically produced generators. The library can be built or modified with the following functions:
-
-```ts
-  AddData(data: LibraryData) // add new data, or merge in new data to an already-existing item in the library with the same key
-  SetData(data: LibraryData) // set data at the LibraryData's key, overwriting what was there, if anything
-  DeleteData(key: string | LibraryData) // delete anything found at a key string, or the key value of the supplied LibraryData
-```
-
-Libraries can also be initialized with LibraryData:
-
-```ts
-  const myLibrary = new Library(...data: LibraryData[])
-```
-
-Furthermore, you can get the contents of a library with
-
-```ts
-  GetLibrary(key: string | LibraryData): LibraryData
-```
-
-Or test if a Library has data at an object path:
-
-```ts
-  HasLibrary(key: string | LibraryData): boolean
-```
-
-Once we have finished collecting our data, we can load the library and ready the generator by:
-
-```ts
-myGenerator.LoadLibrary(myLibrary);
-// or, as a constructor parameter
-const myGenerator = new Generator(myLibrary);
-```
-
-This builds our ValueMap and prepares the generator. It's important to note that loading another library will clear and rebuild the ValueMap, so any manual ValueMap changes must be redone between Library loads.
-
-### Direct Method
-
-The values in the generator can be modified directly by calling the following functions that collections of key-value pairs that represent substitutions for specific strings that appear in templates or other data. These get automatically constructed when loading a library, but can be manually edited before or after loading libraries. See [Data Structure](#data-structure) for more details.
-
-```ts
-  AddValueMap(key: string, value: ValueInput) // add new values, or merge values at an already-existing key
-  SetValueMap(key: string, value: ValueInput) // add new values, or overwrite values at an already-existing key
-  GetValueMap(key: string): {key: string, weight: number}  // return an object of values (and their weights) at key. Returns null if the key is not defined
-  HasValueMap(key: string): boolean // returns a true if any values exist at key, false if there aren't any, and an error if the key is not defined
-```
+### ValueInput
 
 `ValueInput` is an interface that represents any of a number of ways to pass values and/or their [Selection Weights](#selections). A ValueInput parameter can be:
 
@@ -147,22 +104,22 @@ From here, we can begin to generate output.
 
 ## Generation
 
-We can generate a new item `Generate()` function:
+We can produce new output with the `Generate()` function:
 
 ```ts
-  Generate(template?: number|string|string[]|{Key: string}|{Templates: string}, options?: GeneratorOptions): string
+  Generate(template: string|string[]|{template: string}|{template:string[]}, options?: GeneratorOptions): string
 ```
 
 The first optional parameter is the starting template:
 
-- If nothing is provided gmgen will select a random template from a random top-level LibraryData item.
-- If a number is provided gmgen will select a random template from the LibraryData item at that index.
-- If an object with a `Key` string is provided (such as a LibraryItem), gmgen will select a random template from the LibraryData item with the same key
-- If an object with a `Templates` array is provided (such as a LibraryItem), gmgen will select a random string from that array
-- If a string array is provided, gmgen will select a random item from the array
 - If a string is provided, gmgen will use that string as its initial template
+- If a string array is provided, gmgen will select a random item from the array
+- If an object with a `template` string is provided, gmgen will use that string as its initial template
+- If an object with a `templates` array is provided, gmgen will select a random string from that array
 
 The second optional parameter is a GeneratorOptions object:
+
+### GeneratorOptions
 
 ```ts
 class GeneratorOptions {
@@ -196,16 +153,18 @@ If no second parameter is supplied, the following default options will be used:
 
 The generator repeats the following loop until it can't find anything else to do or it hits its MaxIterations value:
 
-| step | process                                                                       |
-| ---- | ----------------------------------------------------------------------------- |
-| 1    | find any `@pct` flags and keep or remove those items based on percent chance  |
-| 2    | resolve any inline sets _of_ selection sets                                   |
-| 3    | find any `@key` definitions and assign a value to the definition, if possible |
-| 4    | find and resolve any inline selection sets                                    |
-| 5    | find and replace keywords, resolve other selection sets                       |
-| 6    | increment iteration counter and return to step #1                             |
+| step | process                                                                                |
+| ---- | -------------------------------------------------------------------------------------- |
+| 1    | find any `@repeat` flags and repeat any content within the parentheses as directed     |
+| 2    | find any `@compose` flags and attempt to resolve the directives within the parentheses |
+| 3    | find any `@pct` flags and keep or remove those items based on percent chance           |
+| 4    | resolve any inline sets _of_ selection sets                                            |
+| 5    | find any `@key` definitions and assign a value to the definition, if possible          |
+| 6    | find and resolve any inline selection sets                                             |
+| 7    | find and replace keywords, resolve other selection sets                                |
+| 8    | increment iteration counter and return to step #1                                      |
 
-Once this process finishes, the generator will finalize this still based on the GeneratorOptions parameters.
+Once this process finishes, the generator will finalize its output based on GeneratorOptions parameters.
 
 ## Debugging
 
@@ -213,13 +172,13 @@ Once this process finishes, the generator will finalize this still based on the 
 FindMissingValues(): string[];
 ```
 
-Recursively iterates through the entire library and detects any missing keys (per the GeneratorOption `IgnoreMissingKeys`)
+Recursively iterates through the generator's value library and detects any missing keys (per the GeneratorOption `IgnoreMissingKeys`)
 
 ```ts
 OverlappingDefinitions(): string[];
 ```
 
-Searches through the Library to find any multiple instances of definitions mapped to the same key
+Searches through the generator's value library to find any multiple instances of definitions mapped to the same key
 
 ```ts
 Step(template: string): string;
@@ -294,6 +253,19 @@ Also note that the negative evaluation uses similar syntax to the negative condi
 
 The `@compose` syntax resolves the statement inside the parentheses and creates a sample selection of the result. Once the inner statement is _completely resolved_, it will wrap it in `%` characters to produce a selection. For example, `@compose(hello-{everyone|world})` would resolve to `%hello-everyone%` or `%hello-world%`, which would be replaced with selections from the `hello-world` or `hello-everyone` selection sets on the next generation pass.
 
+## Selection Repetition
+
+| syntax                      | result                                             |
+| --------------------------- | -------------------------------------------------- |
+| @repeat:X(%prop%)           | selects from %prop% X times                        |
+| @repeat:X({inline\|sample}) | selects from `inline` or `sample` X times          |
+| @repeat:X(@pct50%prop%)     | selects from X instances of %prop% 50% of the time |
+| @repeat:X(static)           | repeats the contents (`static`) X times            |
+
+### Repeating Selections
+
+The `@repeat` directive expands whatever content is inside the parentheses the supplied number of times. Eg. `@repeat:3(hello)` would produce `hello hello hello`. This directive is resolved before any other directive, so it's possible to include selection sets as well as other directives inside repeat directives.
+
 ## Capitalization
 
 | syntax           | result                                                                                               |
@@ -325,7 +297,7 @@ though they may be included in other strings. `mytemplates`, for example, is val
 
 ## Definitions vs Selections vs Templates
 
-The three main concepts in gmgen's data structure as well as its syntax are Definitions, Selections, and Templates. They are all, ultimately, key-value pairs, handled slightly differently for ease of use and organization. Definitions are keys with a single value that cannot be changed once set. Selections are arrays of values that are always selected from randomly (but can include item weights). Templates are values keyed by their containing LibraryData's own key, and serve as the entrypoint into new LibraryData sections. They're described in detail below:
+The three main concepts in gmgen's data structure as well as its syntax are Definitions, Selections, and Templates. They are all, ultimately, key-value pairs, handled slightly differently for ease of use and organization. Definitions are keys with a single value that cannot be changed once set. Selections are arrays of values that are always selected from randomly (but can include item weights). Templates are values keyed by their containing data's own key, and serve as the entrypoint into new data sections. They're described in detail below:
 
 ## Definitions
 
@@ -350,7 +322,7 @@ or, within a data definition:
 or directly, in the generator:
 
 ```ts
-const myGenerator = new Generator(myLibraryData);
+const myGenerator = new Generator(myData);
 const selection = _.sample(['beef', 'some jerk', 'your mom']);
 myGenerator.Define('name', selection);
 ```
@@ -360,11 +332,6 @@ Definitions can then be used in templates like any other keyed item:
 | template                               | result                           |
 | -------------------------------------- | -------------------------------- |
 | `"this example was written by %name%"` | this example was written by beef |
-
-but can also use the `%key%` syntax, which allows for its use _within_ selection sets:
-template|transformation|result
----|---|---
-`{cities_%state%} is in %state` | `{cities_illinois} is in illinois` | `chicago is in illinois`
 
 Definitions don't have to be set within top-level data, necessarily. gmgen will continuously loop through output until all open tags are resolved, or it hits its execution limit (100 loops, by default). In the above example, the %name definition could have been set at the end of my generation process. That said, if a definition can't be evaluated until a later step it will get passed along as a template or selection set, and is therefore unlikely to remain consistent. It is best practice to either ensure definitions are either set as early as possible, or set in such a way that only one selection is possible.
 
@@ -382,7 +349,7 @@ Furthermore you can use this syntax to nest keywords where you otherwise couldn'
 
 **Selections are in-place random substitutions.**
 
-They can come from an inline list, a value map made from property selections (see [Data Structures](#data-structures)) or data in the library found at a property path. They can also contain keywords in order to modify selection sets (eg. `{cities_%country%}` might resolve to `{cities_usa}` or `cities_china`).
+They can come from an inline list, a value map made from property selections (see [Data Structures](#data-structures)) or data found at a property path. They can also contain keywords in order to modify selection sets (eg. `{cities_%country%}` might resolve to `{cities_usa}` or `cities_china`).
 
 Inline sets are very simple, and are written as `{bracketed|items|separated|by|pipes}`. Every item has an equal chance of being selected, though this can be modified with _weights_. Weights are appended with a `:` and an integer, for example:
 
@@ -392,7 +359,7 @@ In the above example, "good" has weight 10, "cool" 50, and "awful" 1. This is se
 
 Inline selection sets can also be empty, for example: `{alpha|beta|}`, which will render as "alpha", "beta", or an empty string. Empty selection sets can also be weighted, eg: `{alpha:1|beta:2|:3}`. Empty sets might cause issues with spacing, but under default postprocessing this shouldn't be much of an issue.
 
-Selections that have no pipes are interpreted by gmgen as a reference selection. gmgen will first look for a string array with a key that matches a template selection that has already been made (see [Data Structures](#data-structures)). If it can't find one, it will then look for a string array at that location in the generator library. When it finds one, it makes a random selection from there.
+Selections that have no pipes are interpreted by gmgen as a reference selection. gmgen will first look for a string array with a key that matches a template selection that has already been made (see [Data Structures](#data-structures)). If it can't find one, it will then look for a string array at that location in the generator's library. When it finds one, it makes a random selection from there.
 
 Finally, array elements can also be weighted by adding a `:n` integer to the end, exactly like the inline syntax. This will be ignored if not followed immediately by an integer, or if the colon is escaped with `\`
 
@@ -482,272 +449,15 @@ Capitalization sequences should come first in a set of reserved characters:
 
 Double or triple carets only need to be terminated by a single caret (`^^^hello world^`, not `^^^hello world^^^`), and cannot be nested.
 
-# Generator Libraries
-
-## LibraryData
-
-LibraryData objects contain all of your generation data, and are used to construct a Generator's Library.
-
-LibraryData outline:
-
-```ts
-{
-  key: string,
-  definitions: Map<string, string>,
-  values: Map<string, string | string[]>,
-  templates: string[]
-}
-```
-
-`definitions`, `values`, and `templates` all furnish a Generator's ValueMap, but are imported into a Library in slightly different ways.
-
-**Definitions**, once set, cannot be overwritten. This means:
-
-- A definition with selection syntax will never be resolved into a single value. Defining something `"{like|this}"` will mean that a choice between `like` _or_ `this` will be made _every_ time the key is invoked
-- Overlapping definitions will be ignored as soon as a key is defined. You can examine a Library for these with the `Generator.OverlappingDefinitions()` function, which will return a list of all colliding definition keys.
-
-**Values** are standard pairs of keys and ValueItem arrays. You can write them a number of different ways, and they'll be converted to `{key: string, value: string, weight: number}` objects when the Generator loads a library. Multiple LibraryData objects can contain values with the same key, which will be merged on Library load.
-
-### Value JSON syntax
-
-All of the following are equivalent, and will be converted to the same key - value/weight array pairs when loaded:
-
-```json
-    "valueKey": "item_a:2|item_b:3|item_c:1",
-```
-
-```json
-    "valueKey": [
-      "item_a:2",
-      "item_b:3",
-      "item_c:1"
-    ],
-```
-
-```json
-    "valueKey": [
-      { "value": "item_a", "weight": 2 },
-      { "value": "item_b", "weight": 3 },
-      { "value": "item_c", "weight": 1 }
-    ],
-```
-
-```json
-    "valueKey": [
-      ["item_a", 2],
-      ["item_b", 3],
-      ["item_c", 1]
-    ],
-```
-
-in every case, these are converted to:
-
-```ts
-{
-  key: "valueKey"
-  values: [
-    {value: "item_a", weight: 2}
-    {value: "item_a", weight: 3}
-    {value: "item_a", weight: 1}
-  ]
-}
-```
-
-which style you choose is a matter of preference. It's important to note that the `:n` weight syntax and the `weight` property can be omitted completely in one or all value items, and the item weight will automatically be assigned a default value of `1`.
-
-**Templates** are key-value pairs, but take the key of the LibraryData object that defines them. Additionally, the Generator will begin its generation process by selecting from the `templates` array if passed an index, a LibraryData key, or a LibraryData object. This allows for library organization by injecting template keys into other templates, for example:
-
-`parent.json`
-
-```json
-{
-  "key": "parent",
-  "definitions": {
-    "parent_definition": "definition 1"
-  },
-  "values": {
-    "parent_value": "value 1"
-  },
-  "templates": ["%child_definition {child_value} / nested template: {child}"]
-}
-```
-
-`child.json`
-
-```json
-{
-  "key": "child",
-  "definitions": {
-    "child_definition": "definition 2"
-  },
-  "values": {
-    "child_value": "value 2"
-  },,
-  "templates": [
-    "hello from nested template %parent_definition {parent_value}"
-  ]
-}
-```
-
-produces: `definition 2 value 2 / nested template: hello from nested template definition 1 value 1`
-
-## Example JSON
-
-```json
-{
-  "key": "example",
-  "definitions": {
-    "name": "beef"
-  },
-  "values": {
-    "you": ["buddy|pal|friend", "{insult}"],
-    "insult": ["dingus", "nerd"],
-    "greeting": ["{howdy:1|hey:3}", "sup"]
-  },
-  "templates": [
-    "Hello {you}, I am ^%name",
-    "{greeting} buddy, {my name is|you can call me} ^%name"
-  ]
-}
-```
-
-Would produce output like: `Hello nerd, I am Beef`, `Hey buddy, you can call me Beef`, or `Hello pal, I am Beef`. These selection sets (and definitions) are written into both the library and the value map, so any other properties selected during this generation process would replace `%name` with `beef` and `{insult}` with a selection from "dingus" or "nerd". Other properties that defined `insult` would add to the possible selection set, which is gathered before the template is evaluated, so if other properties elsewhere in the object expanded the `insult` array, the templates above would be able to choose from that expanded set.
-
-That's a complicated way of explaining that any selection definitions in properties are collected and merged together **before** any templates are evaluated
-
-## Dynamic Generation
-
-Static data may not be sufficient for your use case - for example, you may want to allow a user to manually add items to a selection set, or define their own generation template. In these cases, you can dynamically construct LibraryData for your library or generator.
-
-Create a LibraryData with:
-
-```ts
-const myData = new LibraryData(key: string);
-```
-
-all fields (`key`, `definitions`, `values`, and `templates`) on a LibraryData object are public, so you can manipulate them directly, but convenience methods are provided:
-
-### Definitions
-
-```ts
-myData.definitions;
-```
-
-```ts
-Define(key: string, value: string)
-```
-
-This function will throw an error if the key is already defined
-
-```ts
-ClearDefinition(key: string)
-```
-
-Removes a definition.
-
-### Templates
-
-```ts
-myData.templates;
-```
-
-```ts
-AddTemplate(...value: string[])
-```
-
-Adds one or more template strings. Templates are automatically given the same key as its containing LibraryData.
-
-```ts
-SetTemplate(index: number, value: string)
-```
-
-Overwrites a template at index.
-
-```ts
-RemoveTemplate(index: number)
-```
-
-Removes a template at index.
-
-```ts
-ClearTemplates(index: number)
-```
-
-Removes all templates on the object.
-
-### Values
-
-```ts
-myData.values;
-```
-
-```ts
-GetValue(key: string): {value: string, weight: number}[]
-```
-
-Get an array of all value items (and their weights) at the provided key. If the key does not exist, this will return `null`.
-
-```ts
-AddValue(key: string, value: string | string[], weight?: number | number[])
-```
-
-If it already exists, the the value item will be added to the existing key. Values can be added as an array of strings, or with any gmgen syntax (eg. `{item 1|item 2|item 3}`). Item weights can be optionally added as a single number, which will be given to all values, or, as an array of numbers which will be assigned to the values in order (ie `value[3]` will be weighted by `weight[3]`). Weights can be passed via gmgen syntax as well (`{item a:5|item b:3|item c:1}`). Weights passed as a parameter will overwrite weights derived from syntax.
-
-```ts
-SetValue(key: string, value: string | string[], weight?: number | number[])
-```
-
-As above, but will overwrite an existing key
-
-```ts
-ClearValue(key: string)
-```
-
-Clears all values for the given key. An empty value set will be left blank at rendering, but will **not** throw an error on generation.
-
-```ts
-ClearValueWeights(key: string)
-```
-
-Sets the weight of all items under the key to `1`
-
-```ts
-DeleteValue(key: string, index: number)
-```
-
-Removes a key and all of its associated values. A missing key **will** throw an error on generation.
-
-### Value Items
-
-The following functions can be used to manipulate the specific elements a Value can select over (its internal selection array).
-
-```ts
-SetValueItemWeight(key: string, index: number, weight: number)
-```
-
-Sets a value's item's weight based on its index in the array.
-
-```ts
-ClearValueItem(key: string, index: number)
-```
-
-Sets the value item at `key[index]` to an empty string with weight `1`
-
-```ts
-DeleteValueItem(key: string, index: number)
-```
-
-Removes a value item at `key[index]`
-
 # FAQ
 
 **Can I sell my version of gmgen? Can I sell something that uses this module?**
 
 > This tool is protected under the GNU General Public License v3.0. This means you **cannot** sell a fork of this as closed-source software. However, you **can** sell your own software that uses this tool, as long as you publish any upgrades or modifications to gmgen as open-source. You can likewise sell data for gmgen, as long as any modifications to the tool itself are kept open-source. Please see the LICENSE file included in this repo for more details.
 
-**If Definitions and Templates are ultimately converted to ValueMap items, what's to stop me from defining all my data as values?**
+**If Templates are ultimately converted to ValueMap items, what's to stop me from defining all my templates as values?**
 
-> Nothing, and that's a completely valid way to lay out your library data. Definitions and Templates are simply organizational tools.
+> Nothing, and that's a completely valid way to lay out your data. Templates are simply organizational tools.
 
 **There is no self-referential checking. Does that mean I can make runaway loops?**
 

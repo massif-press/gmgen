@@ -1,4 +1,3 @@
-import GeneratorLibrary from './generatorLibrary';
 import { logLevel } from './util';
 interface templateItem {
     templates: string[];
@@ -7,7 +6,7 @@ type ValueItem = {
     value: string;
     weight: number;
 };
-declare class GeneratorOptions {
+type GeneratorOptions = {
     Trim: boolean;
     CleanMultipleSpaces: boolean;
     ClearMissingKeys: boolean;
@@ -16,18 +15,17 @@ declare class GeneratorOptions {
     MaxIterations: number;
     PreventEarlyExit: boolean;
     Logging: logLevel;
-}
+};
 declare class Generator {
-    Library: GeneratorLibrary | undefined;
     ValueMap: Map<string, ValueItem[]>;
     DefinitionMap: Map<string, string>;
     private _timer;
     private _output;
     private _options;
-    constructor(library?: GeneratorLibrary | null, options?: any);
-    LoadLibrary(library: GeneratorLibrary): void;
+    constructor(options?: any);
+    AddData(data: any): void;
     SetOptions(options: GeneratorOptions): void;
-    SetOption(key: string, value: string | number | boolean): void;
+    SetOption<K extends keyof GeneratorOptions>(key: K, value: GeneratorOptions[K]): void;
     Generate(template?: string | string[] | templateItem): string;
     private cleanup;
     private processCapitals;
@@ -39,6 +37,7 @@ declare class Generator {
     private cleanEscapes;
     private innerProcess;
     private outerProcess;
+    private resolveRepeats;
     private resolveDefinitions;
     private conditionalSelection;
     private compositionalSelection;
@@ -62,7 +61,7 @@ declare class Generator {
     AddValueMap(key: string, data: ValueItem[]): void;
     DeleteValueMap(key: string): void;
     FindMissingValues(template?: string | string[] | templateItem, iterations?: number): string[];
-    OverlappingDefinitions(): string[];
+    OverlappingDefinitions(data: any): string[];
     Step(template?: string | string[] | templateItem): string;
     private _log;
     private _debugLog;

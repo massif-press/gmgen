@@ -1,3 +1,9 @@
+## 1.1.0 (2023-01-17)
+
+- Pulled library initialization procedures into Generator class
+- Added `repeat` directive
+- Cleaned up README
+
 ## 1.0.4 (2023-01-11)
 
 Reworked definition system to preserve definitions that rely on late-generation selection sets
